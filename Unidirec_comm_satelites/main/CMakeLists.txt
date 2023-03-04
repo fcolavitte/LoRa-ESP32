@@ -1,4 +1,6 @@
-idf_component_register(SRCS "hello_world_main.c"
-                    INCLUDE_DIRS "")
+idf_component_register(SRCS "main.c" "Drivers/src/API_WiFi.c" "Drivers/src/API_Firebase.c"
+							"Drivers/src/API_USB.c" "Drivers/src/MEF.c" "Drivers/src/API_Json.c"
+                    INCLUDE_DIRS "Drivers/lib")
+
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
