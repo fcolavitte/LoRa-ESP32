@@ -15,8 +15,6 @@
 
 
 /*		----- Typedef -----		*/
-
-
 typedef enum{
 	null,		/*No envía mensaje, solo cuando se pone manualmente por USB con el caracter '>' */
 	continuo,	/*Funciona en modo "Beacon"	repitiendo el mensaje continuamente cada un cierto periodo*/
@@ -35,14 +33,7 @@ typedef struct{
 } device_config_t;
 
 
-typedef enum{
-	menu_main 		= 0,
-	menu_mensaje 	= 1,
-	menu_config_web = 2,
-	menu_wifi_config 	 = 21,
-	menu_firebase_config = 22,
-	menu_time_config 	 = 23
-}pos_menu_t;
+
 
 typedef enum{
 	USB_mode,

@@ -10,15 +10,6 @@
 
 /*		----- Typedef -----		*/
 typedef enum{
-	menu_main 		= 0,
-	menu_mensaje 	= 1,
-	menu_config_web = 2,
-	menu_wifi_config 	 = 21,
-	menu_firebase_config = 22,
-	menu_time_config 	 = 23
-}pos_menu_t;
-
-typedef enum{
 	USB_mode,
 	WiFi_mode
 }MEF_mode_t;
@@ -30,11 +21,13 @@ void read_command(void);
 void send_message(void);
 void text_lower(uint8_t *text);
 void display_tree(void);
+pos_menu_t read_cd_ID(void);
 
 void display_menu(void);
 void move_menu(uint8_t numero_ingresado);
 void display_help(void);
 void display_comds_list(void);
+void display_help_main(void);
 
 /*		----- Funciones externas -----		*/
 extern void reset_config_dataBase(void);
@@ -60,7 +53,7 @@ extern uint32_t segundos_actuales;
  */
 uint8_t USB_get_input(void){
     char ch[2] = {0,0};
-    fgets(ch, 2, stdin); // @suppress("Field cannot be resolved")
+    fgets(ch, 2, stdin); // @suppress("Field cannot be resolved") // @suppress("Symbol is not resolved")
     if(ch[0]==0){	/*Si no se recibe ningun caracter la función devuelve 0*/
     	return 0;
     }
@@ -109,7 +102,7 @@ void read_command(void){
 	text_lower(&USB_input[1]);
 	if(strstr((char *)(USB_input+1),"help")!=0){
 		printf(">> Comando $help ingresado.\n");
-		display_help();
+		display_help_main();
 	}
 	else if(strstr((char *)(USB_input+1),"ls")!=0||strstr((char *)(USB_input+1),"list")!=0||strstr((char *)(USB_input+1),"tree")!=0){
 		printf(">> Comando $ls ingresado.\n");
@@ -117,6 +110,8 @@ void read_command(void){
 	}
 	else if(strstr((char *)(USB_input+1),"cd")!=0){
 		printf(">> Comando $cd ingresado.\n");
+		pos_menu_actual = read_cd_ID();
+		display_menu();
 	}
 	else if(strstr((char *)(USB_input+1),"wifi")!=0||strstr((char *)(USB_input+1),"wifi-mode")!=0){
 		printf(">> Comando $wifi ingresado.\n");
@@ -133,6 +128,13 @@ void read_command(void){
 }
 
 
+pos_menu_t read_cd_ID(void){
+	uint8_t *indexIn = (uint8_t *)strstr((char *)(USB_input+1),"cd")+2;
+	if(strlen((char *)indexIn)==0){
+		return menu_main;
+	}
+	return atoi((char *)indexIn);
+}
 
 
 
@@ -203,7 +205,11 @@ void display_menu(void){
 			printf("4. Ventana [minutos]\n5. Inicio de emisión\n6. Ayuda\n");
 		break;
 		case menu_config_web:
-			printf("0. Atras\n1. WiFi Config\n2. FireBase config\n3. Fecha y Hora\n4. Ayuda\n");
+			printf("0. Atras\n1. LoRa Config\n2. WiFi Config\n3. FireBase config\n4. Fecha y Hora\n5. Ayuda\n");
+		break;
+		case menu_lora_config:
+			printf("0. Atras\n1. Network y Address del E22\n2. Velocidad de transmisión"
+					"\n3. Potencia de transmisión\n4. Frecuencia de transmisión\n5. Ayuda\n");
 		break;
 		case menu_wifi_config:
 			printf("0. Atras\n1. SSD\n2. WiFi PASS\n3. Ayuda\n");
@@ -299,18 +305,22 @@ void move_menu(uint8_t numero_ingresado){
 					display_menu();
 				break;
 				case '1':
-					pos_menu_actual = menu_wifi_config;
+					pos_menu_actual = menu_lora_config;
 					display_menu();
 				break;
 				case '2':
-					pos_menu_actual = menu_firebase_config;
+					pos_menu_actual = menu_wifi_config;
 					display_menu();
 				break;
 				case '3':
-					pos_menu_actual = menu_time_config;
+					pos_menu_actual = menu_firebase_config;
 					display_menu();
 				break;
 				case '4':
+					pos_menu_actual = menu_time_config;
+					display_menu();
+				break;
+				case '5':
 					display_help();
 					display_menu();
 				break;
@@ -322,6 +332,36 @@ void move_menu(uint8_t numero_ingresado){
 				break;
 			}
 		break;
+			case menu_lora_config:
+				switch(numero_ingresado){
+					case '0':
+						pos_menu_actual = menu_config_web;
+						display_menu();
+					break;
+					case '1':
+						printf("Ingrese el network al que pertenece y el Address del E22:\n");
+					break;
+					case '2':
+						printf("Ingrese la velocidad de transmisión por aire del E22:\n");
+					break;
+					case '3':
+						printf("Ingrese la potencia de transmisión del E22:\n");
+					break;
+					case '4':
+						printf("Ingrese la frecuencia de la portadora del E22 con la que se transmitirá:\n");
+					break;
+					case '5':
+						display_help();
+						display_menu();
+					break;
+					default:
+						printf("\n\nOpcion no valida. Intente nuevamente.\n");
+						printf("Si quiere ingresar un comando ingrese \"$\" antes del texto.\n");
+						printf("Si quiere enviar un mensaje por LoRa ingrese \">\" antes del mensaje.\n\n");
+						display_menu();
+					break;
+				}
+			break;
 		case menu_wifi_config:
 			switch(numero_ingresado){
 				case '0':
@@ -412,12 +452,7 @@ void move_menu(uint8_t numero_ingresado){
 void display_help(void){
 	switch (pos_menu_actual){
 		case menu_main:
-			printf("\n----------------------------------------------------------------------------------------\n");
-			printf("\nPara navegar por el menú envíe números de 0 al 9.\n");
-			printf("Si quiere envier un mensaje por única vez por LoRa escriba el caracter \">\" y a continuación el mensaje.\n");
-			display_comds_list();
-			printf("En la opción \"mensaje\" puede realizar configuraciones del envío de mensajes por LoRa.\n");
-			printf("En la opción \"configuración web\" puede realizar configuraciones del Wi-Fi y la base de datos.\n");
+			display_help_main();
 		break;
 		case menu_mensaje:
 		break;
@@ -436,6 +471,14 @@ void display_help(void){
 	}
 }
 
+void display_help_main(void){
+	printf("\n----------------------------------------------------------------------------------------\n");
+	printf("\nPara navegar por el menú envíe números de 0 al 9.\n");
+	printf("Si quiere envier un mensaje por única vez por LoRa escriba el caracter \">\" y a continuación el mensaje.\n");
+	display_comds_list();
+	printf("En la opción \"mensaje\" puede realizar configuraciones del envío de mensajes por LoRa.\n");
+	printf("En la opción \"configuración web\" puede realizar configuraciones del Wi-Fi y la base de datos.\n");
+}
 
 /**
  * @brief Muestra la lista de comandos
@@ -450,6 +493,7 @@ void display_comds_list(void){
 	printf("		Muestra la lista completa del menu en forma de archivos e indica la posición actual.\n\n");
 	printf("	$cd <menu ID>:\n");
 	printf("		Se mueve a la posición del ID del menu ingresado.\n");
+	printf("		El ID se debe introducir sin puntos ni espacios dentro del número.\n");
 	printf("		El ID de cada menu se puede ver con los comandos ls, list y tree.\n\n");
 	printf("	$wifi y $wifi-mode:\n");
 	printf("		Cambia el modo de funcionamiento a WiFi.\n");
