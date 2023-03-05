@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: CC0-1.0
  */
 
+#include <API_Time.h>
 #include "main.h"
-#include "API_delay.h"
 
 
 void app_main(void) {

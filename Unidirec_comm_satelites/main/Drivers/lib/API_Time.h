@@ -5,8 +5,8 @@
  *      Author: Facu
  */
 
-#ifndef MAIN_DRIVERS_LIB_API_DELAY_H_
-#define MAIN_DRIVERS_LIB_API_DELAY_H_
+#ifndef MAIN_DRIVERS_LIB_API_TIME_H_
+#define MAIN_DRIVERS_LIB_API_TIME_H_
 
 #include "stdint.h"
 #include "esp_http_client.h"
@@ -36,4 +36,4 @@ esp_err_t client_event_UTP_handler(esp_http_client_event_handle_t evt);
 void UTP_init(void);
 
 
-#endif /* MAIN_DRIVERS_LIB_API_DELAY_H_ */
+#endif /* MAIN_DRIVERS_LIB_API_TIME_H_ */

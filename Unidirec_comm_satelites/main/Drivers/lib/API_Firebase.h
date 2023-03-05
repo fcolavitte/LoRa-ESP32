@@ -30,11 +30,9 @@
 
 
 
-
+/* Funciones de interacción con base de datos de FireBase */
 void client_get_Json(void);
-esp_err_t client_event_Json_handler(esp_http_client_event_handle_t evt);
-void client_post_frecuencia_seteada(int f);
-esp_err_t client_event_get_frecuencia_seteada_handler(esp_http_client_event_handle_t evt);
+void clear_firebase_pass_to_WiFi(void);
 
 
 uint8_t *get_firebase_message(void);
@@ -42,7 +40,6 @@ uint8_t *get_firebase_Time_inicio_programado(void);
 uint32_t get_firebase_Periodo_seconds(void);
 uint32_t get_firebase_Ventana_minutes(void);
 uint8_t  get_firebase_pass_to_WiFi(void);
-void clear_firebase_pass_to_WiFi(void);
 void print_firebase_dates(void);
 
 #endif /* MAIN_DRIVERS_LIB_API_FIREBASE_H_ */

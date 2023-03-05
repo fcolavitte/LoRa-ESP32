@@ -1,4 +1,4 @@
-idf_component_register(SRCS "main.c" "Drivers/src/API_WiFi.c" "Drivers/src/API_Firebase.c" "Drivers/src/API_delay.c"
+idf_component_register(SRCS "main.c" "Drivers/src/API_WiFi.c" "Drivers/src/API_Firebase.c" "Drivers/src/API_Time.c"
 							"Drivers/src/API_USB.c" "Drivers/src/MEF.c" "Drivers/src/API_Json.c"
                     INCLUDE_DIRS "Drivers/lib")
 
