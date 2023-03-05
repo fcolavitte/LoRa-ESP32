@@ -67,3 +67,24 @@ void print_MAC(void){
         else{printf("\n");}
     }
 }
+
+
+/*if (esp_ip4_addr1_16(&ipinfo.ip) == 0) {
+            reconectar();
+        }
+*/
+/*
+static void reconectar() {
+    tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ipinfo);
+    sprintf(str, "%x", ipinfo.ip.addr);
+    printf("My IP: " IPSTR "\n", IP2STR(&ipinfo.ip));
+
+
+    printf("Se ha perdido la conexion a wifi ... \n");
+    vTaskDelay(1000/ portTICK_PERIOD_MS);
+    printf("Reconectando ... \n");
+    esp_wifi_connect();
+    vTaskDelay(10000/ portTICK_PERIOD_MS);
+}
+*/
+

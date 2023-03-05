@@ -9,9 +9,12 @@
 #define MAIN_DRIVERS_LIB_MAIN_H_
 
 
+#include "sdkconfig.h"
 #include "stdint.h"
 #include "stdio.h"
 #include "string.h"
+#include "esp_wifi.h"
+
 
 
 
@@ -42,7 +45,7 @@ typedef struct{
 
 
 void star_MEF(void);
-
+void update_MEF(void);
 
 
 #endif /* MAIN_DRIVERS_LIB_MAIN_H_ */

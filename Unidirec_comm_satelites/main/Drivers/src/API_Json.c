@@ -23,25 +23,6 @@ Json_struct_t Json_from_DB;
 
 /* ------------------- PARA PRUEBA ------------------------- */
 
-char *JsonString = "{\"Enviar\":\"Mensaje de prueba\",\"Horario\":\"12-15\",\"Pasar_a_modo_WiFi\":0,\"Periodo\":30,\"Ventana\":10}";
-void testJson(void);
-
-void testJson(void){
-	if(analizar_json(&Json_from_DB,(uint8_t *)JsonString)==1){
-		printf("analizar_json() OK!\n");
-	} else {
-		printf("FALLA en analizar_json()\n");
-	}
-	printf(">>Enviar: %s\n",Json_from_DB.Mensaje.value);
-	printf(">>Horario: %s\n",Json_from_DB.Time_inicio_programado.value);
-	printf(">>Periodo: %d\n",Json_from_DB.Periodo_seconds.value);
-	printf(">>Ventana: %d\n",Json_from_DB.Ventana_minutes.value);
-	printf(">>Pass_to_WiFi: %d\n",Json_from_DB.Pass_to_WiFi.value);
-}
-
-
-
-
 
 
 /*
@@ -71,6 +52,11 @@ uint8_t analizar_json(Json_struct_t *Json_struct, uint8_t *Json_String){
 		printf(">>ERROR>analizar_json()>Json_struct==0||Json_String==0\n");
 		return 0;
 	}
+	Json_from_DB.Mensaje.key				= (uint8_t*)"Enviar";
+	Json_from_DB.Time_inicio_programado.key	= (uint8_t*)"Horario";
+	Json_from_DB.Periodo_seconds.key 	= (uint8_t*)"Periodo";
+	Json_from_DB.Ventana_minutes.key 	= (uint8_t*)"Ventana";
+	Json_from_DB.Pass_to_WiFi.key 		= (uint8_t*)"Pasar_a_modo_WiFi";
 	/*Variables locales*/
 	uint8_t int_in_String[INT_IN_STRING_SIZE];
 	uint8_t int_control_error = 0;
@@ -106,7 +92,6 @@ uint8_t analizar_json(Json_struct_t *Json_struct, uint8_t *Json_String){
 	}
 	return 1;
 }
-
 
 
 /**

@@ -5,24 +5,34 @@
  *      Author: Facundo
  */
 #include "main.h"
+#include "API_WiFi.h"
 #include "API_Firebase.h"
+#include "API_USB.h"
+#include "API_delay.h"
 
-
+#define DEBUG 0
 
 /*		----- Typedef -----		*/
 
-/*typedef struct{
-	char SSD[20],
-	char WiFi_PASS[20]
-} WiFi_config_t;*/
+
+
+
+typedef enum{
+	null,		/*No envía mensaje, solo cuando se pone manualmente por USB con el caracter '>' */
+	continuo,	/*Funciona en modo "Beacon"	repitiendo el mensaje continuamente cada un cierto periodo*/
+	programado	/*Emite el mensaje continuamente a una hora determinada y durante una ventana de tiempo determinada*/
+}message_mode_t;
 
 /**
  * @brief Estructura de datos de configuración WiFi y guardados en DB
  */
 typedef struct{
-	uint8_t MEF_mode;	/*<WiFi ON/OFF><2 bits para modo>*/
-	//WiFi_config_t WiFi_config
-} WiFi_data_t;
+	message_mode_t message_mode;
+	uint8_t *Mensaje;
+	uint8_t *Time_inicio_programado;
+	uint32_t Periodo_seconds;
+	uint32_t Ventana_minutes;
+} device_config_t;
 
 
 typedef enum{
@@ -34,10 +44,23 @@ typedef enum{
 	menu_time_config 	 = 23
 }pos_menu_t;
 
+typedef enum{
+	USB_mode,
+	WiFi_mode
+}MEF_mode_t;
+
+
+extern uint8_t fecha_actual[11];
+extern uint32_t segundos_actuales;
+extern uint8_t pass_to_WiFi;
+
 
 /*		----- Variables Globales privadas -----		*/
 pos_menu_t pos_menu_actual;
-WiFi_data_t WiFi_data;
+MEF_mode_t MEF_mode = WiFi_mode;
+MEF_mode_t MEF_mode_previo = WiFi_mode;
+delay_t * delay_get_json;
+
 
 /*		----- Funciones privadas -----		*/
 void display_menu(void);
@@ -46,11 +69,73 @@ void display_help(void);
 void display_comds_list(void);
 void reset_config_dataBase(void);
 
+
 void star_MEF(void){
+	/*Cargar estados de la MEF*/
+	MEF_mode = WiFi_mode;
+	MEF_mode_previo = WiFi_mode;
 	pos_menu_actual = menu_main;
+	/*Conectividad*/
+	WiFiConect();
+	//Verificar conexión WiFi
+	vTaskDelay(5000/ portTICK_PERIOD_MS);
+	print_MAC();
+	printf("\n\n");
+	/*Cargar datos desde FireBase*/
 	iniciar_Json_from_DB();
 	client_get_Json();
+	print_firebase_dates();
+	/*Cargando hora del sistema*/
+	UTP_init();
+	display_menu();
+	delayInit(&delay_get_json, 10);
+	printf("\n>> El dispositivo se inició en modo WiFi.\n");
+	printf(">> Envíe cualquier línea o caracter por USB para pasarlo a modo USB.\n");
+	printf(">> Luego se puede regresar al modo WiFi con el comando \"$wifi\",");
+	printf("o desde la base de datos haciendo 1 la variable \"Pasar_a_modo_WiFi\".\n\n");
 }
+
+void update_MEF(void){
+	if(USB_get_input()){	/*Si se recibe algo por USB se debe pasar a USB_mode*/
+		MEF_mode = USB_mode;
+		if(pass_to_WiFi==1){
+			MEF_mode = WiFi_mode;
+		}
+	}
+	if(delayRead(&delay_get_json)){
+		client_get_Json();
+		if(get_firebase_pass_to_WiFi()){
+			MEF_mode = WiFi_mode;
+			clear_firebase_pass_to_WiFi();
+		}
+	}
+
+	switch(MEF_mode){
+	case WiFi_mode:
+#if DEBUG == 1
+		printf("WIFI MODE\n");
+#endif
+		if(MEF_mode_previo == USB_mode){
+			MEF_mode_previo = WiFi_mode;
+			printf(">> Se pasó al modo WiFi\n");
+		}
+		break;
+	case USB_mode:
+#if DEBUG == 1
+		printf("USB MODE\n");
+#endif
+		if(MEF_mode_previo == WiFi_mode){
+			MEF_mode_previo = USB_mode;
+			printf(">> Se pasó al modo USB\n");
+			display_menu();
+		}
+		break;
+	default:
+		star_MEF();
+	}
+}
+
+
 
 
 /**
@@ -76,7 +161,17 @@ void display_menu(void){
 			printf("0. Atras\n1. Link\n2. Restablecer\n3. Ayuda\n");
 		break;
 		case menu_time_config:
-			printf("0. Atras\n1. UTC\n2. Fecha\n3. Hora\n");
+			uint8_t _Hora[9]={};
+			itoa(segundos_actuales/3600,(char *)_Hora,10);
+			if(_Hora[1]==0){_Hora[1]=_Hora[0];_Hora[0]='0';}
+			_Hora[2]=':';
+			itoa((segundos_actuales/60)%60,(char *)_Hora+3,10);
+			if(_Hora[4]==0){_Hora[4]=_Hora[3];_Hora[3]='0';}
+			_Hora[5]=':';
+			itoa(segundos_actuales%60,(char *)_Hora+6,10);
+			if(_Hora[7]==0){_Hora[7]=_Hora[6];_Hora[6]='0';}
+			_Hora[8]='\0';
+			printf("0. Atras\n1. Fecha %s (AAA-MM-DD)\n2. Hora %s\n3. Actualizar automáticamente\n4. Ayuda\n",(char *)fecha_actual,(char *)_Hora);
 		break;
 		default:
 			pos_menu_actual = menu_main;
@@ -232,13 +327,13 @@ void move_menu(uint8_t numero_ingresado){
 					display_menu();
 				break;
 				case '1':
-					printf("Ingrese fecha y hora en formato UTC:\n");
-				break;
-				case '2':
 					printf("Ingrese fecha:\n");
 				break;
-				case '3':
+				case '2':
 					printf("Ingrese hora:\n");
+				break;
+				case '3':
+					get_UTP();
 				break;
 				case '4':
 					display_help();
