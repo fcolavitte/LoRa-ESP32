@@ -1,3 +1,6 @@
 (sym_lib_table
-  (lib (name Device)(type Legacy)(uri ${KIPRJMOD}/Device.lib)(options "")(descr ""))
+  (lib (name "Device")(type "Legacy")(uri "${KIPRJMOD}/Device.lib")(options "")(descr ""))
+  (lib (name "New_Library")(type "KiCad")(uri "${KIPRJMOD}/New_Library.kicad_sym")(options "")(descr ""))
+  (lib (name "tp4065_modulo_cargador_de_baterias")(type "KiCad")(uri "${KIPRJMOD}/tp4065_modulo_cargador_de_baterias.kicad_sym")(options "")(descr ""))
+  (lib (name "Libreria_Proyecto_Satellogic")(type "KiCad")(uri "${KIPRJMOD}/Libreria_Proyecto_Satellogic.kicad_sym")(options "")(descr ""))
 )
