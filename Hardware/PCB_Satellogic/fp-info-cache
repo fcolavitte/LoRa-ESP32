@@ -1,4 +1,4 @@
-21454874189648894
+21456553040516370
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -64064,6 +64064,13 @@ E22-900M30S_LoRa_smd
 22
 22
 PCB_Satellogic
+MT3608-Convertidor_Boost
+
+
+0
+4
+4
+PCB_Satellogic
 Node-MCU_ESP32_38PINES_THT_offset
 
 
@@ -64071,7 +64078,7 @@ Node-MCU_ESP32_38PINES_THT_offset
 38
 38
 PCB_Satellogic
-TP4056
+TP4056 - Módulo de carga de batería
 Modulo cargador de bateria
 
 0
