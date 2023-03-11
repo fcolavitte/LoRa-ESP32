@@ -33,4 +33,9 @@
   (pad "2" smd roundrect (at -15 3.25) (size 4.8 3) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25) (tstamp 7466415b-0be9-4514-9b4e-e5cb490a5fbf))
   (pad "3" smd roundrect (at 15 3.25) (size 4.8 3) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25) (tstamp fd991651-3379-43ae-bfbc-5f923bf797d6))
   (pad "4" smd roundrect (at 15 -3.25) (size 4.8 3) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25) (tstamp ab2fbf57-b1a9-4e71-a489-ec44391a0f18))
+  (model "${KIPRJMOD}/Componentes STP/MT3608-DCDC_boost.wrl"
+    (offset (xyz 0 0 1))
+    (scale (xyz 0.4 0.4 0.4))
+    (rotate (xyz 90 0 0))
+  )
 )
