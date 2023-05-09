@@ -86,6 +86,7 @@ void update_MEF(void){
 		MEF_mode = USB_mode;
 		if(pass_to_WiFi==1){
 			MEF_mode = WiFi_mode;
+			pass_to_WiFi = 0;
 		}
 	}
 	if(delayRead(&delay_get_json)){
