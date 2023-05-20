@@ -1,8 +1,8 @@
 /*
- * API_E22.h
- *
- *  Created on: 11 mar. 2023
- *      Author: Facu
+ * @file   : API_E22.h
+ * @date   : Mar 11, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
 
 #ifndef MAIN_DRIVERS_LIB_API_E22_H_
@@ -37,9 +37,6 @@
 /********************** external data declaration ****************************/
 
 /********************** external functions declaration ***********************/
-
-
-
 
 #endif /* MAIN_DRIVERS_LIB_API_E22_H_ */
 

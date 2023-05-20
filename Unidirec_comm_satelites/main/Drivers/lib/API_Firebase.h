@@ -1,8 +1,8 @@
 /*
- * API_Firebase.h
- *
- *  Created on: 9 feb. 2023
- *      Author: Facundo
+ * @file   : API_Firebase.h
+ * @date   : Feb 09, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
 
 /*
@@ -17,24 +17,27 @@
 #ifndef MAIN_DRIVERS_LIB_API_FIREBASE_H_
 #define MAIN_DRIVERS_LIB_API_FIREBASE_H_
 
+/********************** inclusions *******************************************/
 
 #include "main.h"
 #include "esp_http_client.h"
 #include "API_Json.h"
 
+/********************** macros and definitions *******************************/
 
 #define PORT 443
 //#define URL "https://prueba-iot-satellogic-default-rtdb.firebaseio.com/.json"
 #define USERNAME ""		//credenciales de acceso a Firebase, no se necesitan porque está desactivada la autentificacion de usuarios.
 #define PASSWORD ""		//credenciales de acceso a Firebase, no se necesitan porque está desactivada la autentificacion de usuarios.
 
+/********************** typedef **********************************************/
 
+/********************** external data declaration ****************************/
 
-/* Funciones de interacción con base de datos de FireBase */
+/********************** external functions declaration ***********************/
+
 void client_get_Json(void);
 void clear_firebase_pass_to_WiFi(void);
-
-
 uint8_t *get_firebase_message(void);
 uint8_t *get_firebase_Time_inicio_programado(void);
 uint32_t get_firebase_Periodo_seconds(void);
@@ -43,3 +46,5 @@ uint8_t  get_firebase_pass_to_WiFi(void);
 void print_firebase_dates(void);
 
 #endif /* MAIN_DRIVERS_LIB_API_FIREBASE_H_ */
+
+/********************** end of file ******************************************/

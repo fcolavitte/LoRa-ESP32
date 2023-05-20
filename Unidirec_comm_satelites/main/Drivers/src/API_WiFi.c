@@ -1,13 +1,29 @@
 /*
- * API_WiFi.c
- *
- *  Created on: 8 feb. 2023
- *      Author: Facundo
+ * @file   : API_WiFi.c
+ * @date   : Feb 08, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
+
+/********************** inclusions *******************************************/
 
 #include "API_WiFi.h"
 
+/********************** macros and definitions *******************************/
+
+/********************** internal data declaration ****************************/
+
 uint8_t mac[6]; 	/*Variable donde se lee la MAC del WiFi*//*Por defecto la MAC es 30:C6:F7:29:BA:D8*/
+
+/********************** internal functions declaration ***********************/
+
+/********************** internal data definition *****************************/
+
+/********************** external data definition *****************************/
+
+/********************** internal functions definition ************************/
+
+/********************** external functions definition ************************/
 
 void WiFiConect(void) {
 	nvs_flash_init();
@@ -88,3 +104,4 @@ static void reconectar() {
 }
 */
 
+/********************** end of file ******************************************/

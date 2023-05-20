@@ -1,20 +1,24 @@
 /*
- * API_USB.h
- *
- *  Created on: 15 feb. 2023
- *      Author: Facundo
+ * @file   : API_USB.h
+ * @date   : Feb 15, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
 
 #ifndef MAIN_DRIVERS_LIB_API_USB_H_
 #define MAIN_DRIVERS_LIB_API_USB_H_
 
+/********************** inclusions *******************************************/
 
 #include "stdio.h"
 #include "main.h"
 #include "driver/uart.h"
 
+/********************** macros and definitions *******************************/
 
 #define USB_INPUT_LENGHT 30
+
+/********************** typedef **********************************************/
 
 typedef enum{
 	menu_main 		= 0,
@@ -26,8 +30,13 @@ typedef enum{
 	menu_time_config 	 = 24
 }pos_menu_t;
 
+/********************** external data declaration ****************************/
+
+/********************** external functions declaration ***********************/
 
 uint8_t USB_get_input(void);
 void display_menu(void);
 
 #endif /* MAIN_DRIVERS_LIB_API_USB_H_ */
+
+/********************** end of file ******************************************/

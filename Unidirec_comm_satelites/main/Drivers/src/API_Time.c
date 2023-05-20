@@ -1,22 +1,36 @@
 /*
- * API_delay.c
- *
- *  Created on: 4 mar. 2023
- *      Author: Facu
+ * @file   : API_delay.c
+ * @date   : Mar 04, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
+
+/********************** inclusions *******************************************/
 
 #include "../lib/API_Time.h"
 #include "freertos/timers.h"
 
+/********************** macros and definitions *******************************/
+
 #define DEBUG 0
 #define compile 1
 
-uint8_t fecha_actual[11];
-uint32_t segundos_actuales=0;
+/********************** internal data declaration ****************************/
 
+uint8_t fecha_actual[11];
 TimerHandle_t xTimer;
 
+/********************** internal functions declaration ***********************/
 
+/********************** internal data definition *****************************/
+
+uint32_t segundos_actuales=0;
+
+/********************** external data definition *****************************/
+
+/********************** internal functions definition ************************/
+
+/********************** external functions definition ************************/
 
 void get_UTP(void) {
 	printf(">>Iniciando solicitud de hora UTC...\n");
@@ -77,7 +91,6 @@ void UTP_init(void){
 }
 
 #if compile == 1
-
 /*
  * @brief	Inicializa una estructura delay
  * @param	Puntero a estructura delay
@@ -132,6 +145,6 @@ void delayWrite(delay_t * delay, uint32_t duration) {
 	}
 
 }
-
-
 #endif
+
+/********************** end of file ******************************************/

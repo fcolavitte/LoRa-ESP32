@@ -1,20 +1,23 @@
 /*
- * MEF.c
- *
- *  Created on: 17 feb. 2023
- *      Author: Facundo
+ * @file   : MEF.c
+ * @date   : Feb 17, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
+
+/********************** inclusions *******************************************/
 #include <API_Time.h>
 #include "main.h"
 #include "API_WiFi.h"
 #include "API_Firebase.h"
 #include "API_USB.h"
 
+/********************** macros and definitions *******************************/
+
 #define DEBUG 0
 
+/********************** internal data declaration ****************************/
 
-
-/*		----- Typedef -----		*/
 typedef enum{
 	null,		/*No envía mensaje, solo cuando se pone manualmente por USB con el caracter '>' */
 	continuo,	/*Funciona en modo "Beacon"	repitiendo el mensaje continuamente cada un cierto periodo*/
@@ -32,31 +35,31 @@ typedef struct{
 	uint32_t Ventana_minutes;
 } device_config_t;
 
-
-
-
 typedef enum{
 	USB_mode,
 	WiFi_mode
 }MEF_mode_t;
 
+/********************** internal functions declaration ***********************/
 
+void reset_config_dataBase(void);
 
-extern uint8_t pass_to_WiFi;
+/********************** internal data definition *****************************/
 
-
-/*		----- Variables Globales privadas -----		*/
 pos_menu_t pos_menu_actual;
 MEF_mode_t MEF_mode = WiFi_mode;
 MEF_mode_t MEF_mode_previo = WiFi_mode;
 delay_t delay_get_json;
 
+/********************** external data definition *****************************/
 
-/*		----- Funciones privadas -----		*/
-void reset_config_dataBase(void);
+extern uint8_t pass_to_WiFi;
 
+/********************** internal functions definition ************************/
 
-void star_MEF(void){
+/********************** external functions definition ************************/
+
+void start_MEF(void){
 	/*Cargar estados de la MEF*/
 	MEF_mode = WiFi_mode;
 	MEF_mode_previo = WiFi_mode;
@@ -121,7 +124,7 @@ void update_MEF(void){
 		}
 		break;
 	default:
-		star_MEF();
+		start_MEF();
 	}
 }
 

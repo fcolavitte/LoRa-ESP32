@@ -1,13 +1,14 @@
 /*
- * main.h
- *
- *  Created on: 3 mar. 2023
- *      Author: Facundo
+ * @file   : main.h
+ * @date   : Mar 03, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
 
 #ifndef MAIN_DRIVERS_LIB_MAIN_H_
 #define MAIN_DRIVERS_LIB_MAIN_H_
 
+/********************** inclusions *******************************************/
 
 #include "sdkconfig.h"
 #include "stdint.h"
@@ -15,10 +16,11 @@
 #include "string.h"
 #include "esp_wifi.h"
 
-
-
+/********************** macros and definitions *******************************/
 
 #define VALUE_STRING_MAX_LENGHT (uint8_t)30
+
+/********************** typedef **********************************************/
 
 typedef struct{
 	uint8_t *key;//key[KEY_STRING_MAX_LENGHT];
@@ -40,12 +42,13 @@ typedef struct{
 	};
 } Json_struct_t;
 
+/********************** external data declaration ****************************/
 
+/********************** external functions declaration ***********************/
 
-
-
-void star_MEF(void);
+void start_MEF(void);
 void update_MEF(void);
 
-
 #endif /* MAIN_DRIVERS_LIB_MAIN_H_ */
+
+/********************** end of file ******************************************/

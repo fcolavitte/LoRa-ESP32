@@ -1,21 +1,71 @@
 /*
- * API_Firebase.c
- *
- *  Created on: 9 feb. 2023
- *      Author: Facundo
+ * @file   : API_Firebase.c
+ * @date   : Feb 09, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
+
+/********************** inclusions *******************************************/
 
 #include "API_Firebase.h"
 
+/********************** macros and definitions *******************************/
 
 #define DEBUG 0
 
-uint8_t Json_String[140];
-extern Json_struct_t Json_from_DB;
+/********************** internal data declaration ****************************/
+
+/********************** internal functions declaration ***********************/
 
 esp_err_t client_event_Json_handler(esp_http_client_event_handle_t evt);
 esp_err_t client_event_POST_response_handler(esp_http_client_event_handle_t evt);
 
+/********************** internal data definition *****************************/
+
+uint8_t Json_String[140];
+
+/********************** external data definition *****************************/
+
+extern Json_struct_t Json_from_DB;
+
+/********************** internal functions definition ************************/
+
+/**
+ * @brief Handler de la respuesta del GET en que se solicita el Json completo de FireBase
+ */
+esp_err_t client_event_Json_handler(esp_http_client_event_handle_t evt) {
+    if(evt->event_id==HTTP_EVENT_ON_DATA) {
+    	strncpy((char *)Json_String,(char *)evt->data,evt->data_len);
+    	Json_String[139]=0;
+#if DEBUG == 1
+        printf(">> Json desde FireBase: %s\n", Json_String);
+#endif
+        analizar_json(&Json_from_DB, Json_String);
+#if DEBUG == 1
+        print_firebase_dates();
+#endif
+    }
+    return ESP_OK;
+}
+
+
+/**
+ * @brief Handler de la respuesta del POST que hace 0 el valor de "Pasar_a_modo_WiFi"
+ */
+esp_err_t client_event_POST_response_handler(esp_http_client_event_handle_t evt) {
+    switch (evt->event_id) {
+        case HTTP_EVENT_ON_DATA:
+#if DEBUG == 1
+            printf("\n>> FireBase: Respuesta del método POST: %.*s\n", evt->data_len, (char *)evt->data);
+#endif
+            break;
+        default:
+            break;
+    }
+    return ESP_OK;
+}
+
+/********************** external functions definition ************************/
 
 /**
  * @brief Solicita el Json completo de la base de datos web de FireBase y lo analiza para obtener los valores de los keys.
@@ -34,25 +84,6 @@ void client_get_Json(void) {
     esp_http_client_handle_t client = esp_http_client_init(&config_get);
     esp_http_client_perform(client);
     esp_http_client_cleanup(client);
-}
-
-
-/**
- * @brief Handler de la respuesta del GET en que se solicita el Json completo de FireBase
- */
-esp_err_t client_event_Json_handler(esp_http_client_event_handle_t evt) {
-    if(evt->event_id==HTTP_EVENT_ON_DATA) {
-    	strncpy((char *)Json_String,(char *)evt->data,evt->data_len);
-    	Json_String[139]=0;
-#if DEBUG == 1
-        printf(">> Json desde FireBase: %s\n", Json_String);
-#endif
-        analizar_json(&Json_from_DB, Json_String);
-#if DEBUG == 1
-        print_firebase_dates();
-#endif
-    }
-    return ESP_OK;
 }
 
 void print_firebase_dates(void){
@@ -102,19 +133,4 @@ void clear_firebase_pass_to_WiFi(void){
 }
 
 
-/**
- * @brief Handler de la respuesta del POST que hace 0 el valor de "Pasar_a_modo_WiFi"
- */
-esp_err_t client_event_POST_response_handler(esp_http_client_event_handle_t evt) {
-    switch (evt->event_id) {
-        case HTTP_EVENT_ON_DATA:
-#if DEBUG == 1
-            printf("\n>> FireBase: Respuesta del método POST: %.*s\n", evt->data_len, (char *)evt->data);
-#endif
-            break;
-        default:
-            break;
-    }
-    return ESP_OK;
-}
-
+/********************** end of file ******************************************/

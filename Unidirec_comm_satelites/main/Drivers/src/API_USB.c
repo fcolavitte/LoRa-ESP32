@@ -1,21 +1,26 @@
 /*
- * API_USB.c
- *
- *  Created on: 15 feb. 2023
- *      Author: Facundo
+ * @file   : API_USB.c
+ * @date   : Feb 15, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
+
+/********************** inclusions *******************************************/
 
 #include "API_Time.h"
 #include "API_USB.h"
 
-/*		----- Typedef -----		*/
+/********************** macros and definitions *******************************/
+
 typedef enum{
 	USB_mode,
 	WiFi_mode
 }MEF_mode_t;
 
+/********************** internal data declaration ****************************/
 
-/*		----- Funciones privadas -----		*/
+/********************** internal functions declaration ***********************/
+
 void analizar_input_USB(void);
 void read_command(void);
 void send_message(void);
@@ -29,21 +34,24 @@ void display_help(void);
 void display_comds_list(void);
 void display_help_main(void);
 
-/*		----- Funciones externas -----		*/
-extern void reset_config_dataBase(void);
+/********************** internal data definition *****************************/
 
-
-
-/*		----- Variables -----		*/
-extern pos_menu_t pos_menu_actual;
 uint8_t USB_input[USB_INPUT_LENGHT+1] = {};
 int i_USB_input = 0;
 uint8_t pass_to_WiFi=0;
 
+/********************** external data definition *****************************/
+
+extern pos_menu_t pos_menu_actual;
 extern uint8_t fecha_actual[11];
 extern uint32_t segundos_actuales;
 
+/********************** internal functions definition ************************/
 
+/********************** external functions definition ************************/
+
+/*		----- Funciones externas -----		*/
+extern void reset_config_dataBase(void);
 
 /**
  * @brief Revisa si hay caracteres de entrada por USB. Con cada llamada a la función toma un caracter adicional.
@@ -503,3 +511,4 @@ void display_comds_list(void){
 	printf("\n----------------------------------------------------------------------------------------\n\n");
 }
 
+/********************** end of file ******************************************/

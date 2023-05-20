@@ -1,29 +1,31 @@
 /*
- * API_Json.c
- *
- *  Created on: 19 feb. 2023
- *      Author: Facu
+ * @file   : API_Json.c
+ * @date   : Feb 19, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
+
+/********************** inclusions *******************************************/
 
 #include "API_Json.h"
 
+/********************** macros and definitions *******************************/
 
+/********************** internal data declaration ****************************/
 
-
-/*Functions declaration*/
-uint8_t get_Json_value(uint8_t *Json, uint8_t *key, uint8_t *value_return, uint8_t return_max_lenght);
-
-
-/*Global variables*/
 Json_struct_t Json_from_DB;
 
+/********************** internal functions declaration ***********************/
 
+uint8_t get_Json_value(uint8_t *Json, uint8_t *key, uint8_t *value_return, uint8_t return_max_lenght);
 
+/********************** internal data definition *****************************/
 
+/********************** external data definition *****************************/
 
-/* ------------------- PARA PRUEBA ------------------------- */
+/********************** internal functions definition ************************/
 
-
+/********************** external functions definition ************************/
 
 /*
  * @brief Asigna valores por defecto a la estructura Json "Json_from_DB"
@@ -139,3 +141,6 @@ uint8_t get_Json_value(uint8_t *Json, uint8_t *key, uint8_t *value_return, uint8
 	value_return[value_lenght] = '\0';
     return 1;
 }
+
+/********************** end of file ******************************************/
+

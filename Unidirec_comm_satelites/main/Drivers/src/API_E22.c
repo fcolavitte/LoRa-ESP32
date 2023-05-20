@@ -1,8 +1,8 @@
 /*
- * API_E22.c
- *
- *  Created on: 11 mar. 2023
- *      Author: Facu
+ * @file   : API_E22.c
+ * @date   : Mar 11, 2023
+ * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
+ * @version	v1.0.0
  */
 
 #include "API_E22.h"
