@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <string.h>
 
 /********************** inclusions *******************************************/
 
@@ -21,9 +22,11 @@
 
 /********************** external functions declaration ***********************/
 
-extern void HAL_SPI_write(uint8_t *SPI_message, uint8_t message_lenght);
-extern void HAL_GPIO_write(uint8_t GPIO, uint8_t state);
-extern void HAL_GPIO_read(uint8_t GPIO);
+extern void driver_HAL_spi_init(void);
+extern uint8_t driver_HAL_transaction(uint8_t *tx_buffer, uint8_t tx_length, uint8_t *rx_buffer, uint8_t rx_length);
+extern void driver_HAL_gpio_init(uint8_t GPIO_num, bool_t GPIO_is_input);
+extern void driver_HAL_GPIO_write(uint8_t GPIO, bool_t state);
+extern bool_t driver_HAL_GPIO_read(uint8_t GPIO);
 
 /********************** internal data definition *****************************/
 
@@ -31,17 +34,72 @@ extern void HAL_GPIO_read(uint8_t GPIO);
 
 /********************** internal functions definition ************************/
 
-void _E22_write_command(uint8_t opcode, uint8_t *p_parameters, uint8_t n_parameters){
-	/*PSEUDOCódigo: */
-	//uint8_t *SPI_message
-	//Spi_message[0] = opcode;
-	//SPI_message += parameters[0:n-1];
-	//HAL_SPI_write(SPI_message);	/*Declarar función en el E22_port_ESP32*/
-}
-
 /********************** external functions definition ************************/
 
-void E22_setTx(uint32_t timeOut){
+void driver_E22_init(void) {
+	driver_HAL_spi_init();
+	driver_HAL_gpio_init(GPIO_E22_BUSY, INPUT);
+	driver_HAL_gpio_init(GPIO_E22_NRST, OUTPUT);
+	driver_HAL_gpio_init(GPIO_TX_ENABLE, OUTPUT);
+	driver_HAL_gpio_init(GPIO_RX_ENABLE, OUTPUT);
+
+	/* Cargar estados iniciales de los pines */
+	driver_HAL_GPIO_write(GPIO_E22_NRST, HIGH);
+	driver_HAL_GPIO_write(GPIO_TX_ENABLE, LOW);
+	driver_HAL_GPIO_write(GPIO_RX_ENABLE, LOW);
+}
+
+
+void driver_E22_reset(void) {
+	driver_HAL_GPIO_write(GPIO_E22_NRST, LOW);
+	vTaskDelay(10/ portTICK_PERIOD_MS);
+	driver_HAL_GPIO_write(GPIO_E22_NRST, HIGH);
+	vTaskDelay(10/ portTICK_PERIOD_MS);
+}
+
+
+void driver_E22_write_in_buffer(uint8_t offset, uint8_t* tx_buffer, uint8_t tx_length) {
+	if(MAX_SIZE_SPI_BUFFERS - 2 > tx_length) {
+		tx_length = MAX_SIZE_SPI_BUFFERS - 2;
+	}
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MOSI_buffer[MAX_SIZE_SPI_BUFFERS] = {};
+	MOSI_buffer[0] = OPCODE_WRITEBUFFER;
+	MOSI_buffer[1] = offset;
+	memcpy(&(MOSI_buffer[2]), tx_buffer, tx_length);
+	driver_HAL_transaction(MOSI_buffer, tx_length, NULL, 0);
+}
+
+
+void driver_E22_read_from_buffer(uint8_t offset, uint8_t* rx_buffer, uint8_t rx_length) {
+	if(MAX_SIZE_SPI_BUFFERS - 3 > rx_length) {
+		rx_length = MAX_SIZE_SPI_BUFFERS - 3;
+	}
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MOSI_buffer[MAX_SIZE_SPI_BUFFERS] = {};
+	MOSI_buffer[0] = OPCODE_READBUFFER;
+	MOSI_buffer[1] = offset;
+	MOSI_buffer[2] = NOP;
+	driver_HAL_transaction(MOSI_buffer, 3, rx_buffer, rx_length);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+void driver_E22_setTx(uint32_t timeOut){
 	uint8_t parameters[3];
 	parameters[0] =(uint8_t)((timeOut >> 16) & 0xFF);
 	parameters[1] =(uint8_t)((timeOut >> 8)  & 0xFF);
@@ -52,50 +110,15 @@ void E22_setTx(uint32_t timeOut){
 	_E22_write_command(OPCODE_SETTX, parameters, n_parameters);
 }
 
-void E22_reset(void){
-	HAL_GPIO_write(GPIO_E22_RST, 0);
-	vTaskDelay(10/ portTICK_PERIOD_MS);
-	HAL_GPIO_write(GPIO_E22_RST, 1);
-	vTaskDelay(10/ portTICK_PERIOD_MS);
-}
-
-
 /**
  *	@note	Con "payloadlength" se define la cantidad de bytes a mandar en modo Tx
  *			La función TxBaseAddr() define el inicio desde donde se comienza a transmitir o la función SetBufferBaseAddresses() que define también Rx
  */
-void E22_SetPacketParams(void/* ??? */){
+void driver_E22_SetPacketParams(void/* ??? */){
 
 }
 
-/**
- *	@note	El buffer de 256 bytes se borra al poner el E22 en modo SLEEP
- */
-void E22_WriteBuffer(uint8_t offset, uint8_t *data_buffer, uint8_t data_lenght){
-	uint8_t parameters[20];
-	uint8_t n_parameters = 1+data_lenght;
-	//parameters = 1 byte de offset + n bytes de data
-	_E22_write_command(OPCODE_WRITEBUFFER, parameters, n_parameters);
-}
-
-void E22_ReadBuffer(uint8_t offset, uint8_t *data_buffer){
-	uint8_t *parameters = &offset;
-	uint8_t n_parameters = 1;
-	_E22_write_command(OPCODE_SETTX, parameters, n_parameters);
-	//Lo que devuelve, escribirlo en data_buffer
-}
-
-/**
- *	@note	Si el modulo E22 tiene el pin BUSY en bajo está preparado para recibir un comando.
- *			Si el pin busy está en alto se debe esperar para enviar un nuevo comando
- *			Al terminar de enviar un comando hay un retardo hasta que el pin busy se pone en alto para indicar que está procesando el comando
- *			El tiempo de retardo del BUSY es de hasta 126us, excepto cuando sale del modo SLEEP que puede tardar hasta 3,5ms
- */
-bool E22_check_busy_pin_status(){
-	return 1;
-}
-
-void E22_GetRxBufferStatus(){
+void driver_E22_GetRxBufferStatus(){
 
 }
 
