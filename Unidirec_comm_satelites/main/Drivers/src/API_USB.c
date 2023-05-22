@@ -9,6 +9,9 @@
 
 #include "API_Time.h"
 #include "API_USB.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <driver/uart.h>
 
 /********************** macros and definitions *******************************/
 
@@ -21,14 +24,19 @@ typedef enum{
 
 /********************** internal functions declaration ***********************/
 
+
+
+/*		----- Funciones externas -----		*/
+extern void reset_config_dataBase(void);
+
+
+
 void analizar_input_USB(void);
 void read_command(void);
 void send_message(void);
 void text_lower(uint8_t *text);
 void display_tree(void);
 pos_menu_t read_cd_ID(void);
-
-void display_menu(void);
 void move_menu(uint8_t numero_ingresado);
 void display_help(void);
 void display_comds_list(void);
@@ -47,39 +55,6 @@ extern uint8_t fecha_actual[11];
 extern uint32_t segundos_actuales;
 
 /********************** internal functions definition ************************/
-
-/********************** external functions definition ************************/
-
-/*		----- Funciones externas -----		*/
-extern void reset_config_dataBase(void);
-
-/**
- * @brief Revisa si hay caracteres de entrada por USB. Con cada llamada a la función toma un caracter adicional.
- * 		  Guarda los caracteres recibidos en el String USB_input[].
- * 		  Al alcanzarse el largo máximo o detectar un caracter de finalización llama a la función analizar_input_USB()
- * @return Devuelve 1 si se recibió un caracter por USB. En caso de que no haya nada en el buffer devuelve 0.
- */
-uint8_t USB_get_input(void){
-    char ch[2] = {0,0};
-    fgets(ch, 2, stdin); // @suppress("Field cannot be resolved") // @suppress("Symbol is not resolved")
-    if(ch[0]==0){	/*Si no se recibe ningun caracter la función devuelve 0*/
-    	return 0;
-    }
-    if(ch[0]=='\r'||ch[0]==';'){
-    	ch[0]='\n';
-    }
-    if((ch[0]!=0)&&(i_USB_input<USB_INPUT_LENGHT)&&((ch[0]!='\n'))){
-    	USB_input[i_USB_input]=ch[0];
-    	USB_input[i_USB_input+1]='\0';
-        i_USB_input++;
-    }
-    if((i_USB_input>=USB_INPUT_LENGHT)||(ch[0]=='\n')){
-    	//Hacer un flush del buffer stdin
-        analizar_input_USB();
-    }
-    return 1;
-}
-
 
 /**
  * @brief Analiza el String almacenado en USB_input[].
@@ -136,6 +111,11 @@ void read_command(void){
 }
 
 
+/**
+ * @brief	Decodifica la cadena de texto recibida por serie según el comando $cd <ID>
+ * @retval	Devuelve la posición del menú correspondiente según el salto generado con el comando $cd
+ * @note	Si no se recibió el comando $cd y se ejecuta esta función se regresa al menú principal
+ */
 pos_menu_t read_cd_ID(void){
 	uint8_t *indexIn = (uint8_t *)strstr((char *)(USB_input+1),"cd")+2;
 	if(strlen((char *)indexIn)==0){
@@ -145,11 +125,12 @@ pos_menu_t read_cd_ID(void){
 }
 
 
-
+/**
+ * @brief	Envía un mensaje por LoRa
+ */
 void send_message(void){
 	printf("Enviando \"%s\" por LoRa...\n",USB_input+1);
 }
-
 
 
 
@@ -200,54 +181,9 @@ void display_tree(void){
 
 
 /**
- * @brief Se muestra las opciones del menú actual
- */
-void display_menu(void){
-	printf("\n\n    ----  MENU  ----\n");
-	switch (pos_menu_actual){
-		case menu_main:
-			printf("1. Mensaje\n2. Configuración Web\n3. Ayuda\n");
-		break;
-		case menu_mensaje:
-			printf("0. Atras\n1. Señal beacon\n2. Modo de señal\n3. Periodo de emisión [segundos]\n");
-			printf("4. Ventana [minutos]\n5. Inicio de emisión\n6. Ayuda\n");
-		break;
-		case menu_config_web:
-			printf("0. Atras\n1. LoRa Config\n2. WiFi Config\n3. FireBase config\n4. Fecha y Hora\n5. Ayuda\n");
-		break;
-		case menu_lora_config:
-			printf("0. Atras\n1. Network y Address del E22\n2. Velocidad de transmisión"
-					"\n3. Potencia de transmisión\n4. Frecuencia de transmisión\n5. Ayuda\n");
-		break;
-		case menu_wifi_config:
-			printf("0. Atras\n1. SSD\n2. WiFi PASS\n3. Ayuda\n");
-		break;
-		case menu_firebase_config:
-			printf("0. Atras\n1. Link\n2. Restablecer\n3. Ayuda\n");
-		break;
-		case menu_time_config:
-			uint8_t _Hora[9]={};
-			itoa(segundos_actuales/3600,(char *)_Hora,10);
-			if(_Hora[1]==0){_Hora[1]=_Hora[0];_Hora[0]='0';}
-			_Hora[2]=':';
-			itoa((segundos_actuales/60)%60,(char *)_Hora+3,10);
-			if(_Hora[4]==0){_Hora[4]=_Hora[3];_Hora[3]='0';}
-			_Hora[5]=':';
-			itoa(segundos_actuales%60,(char *)_Hora+6,10);
-			if(_Hora[7]==0){_Hora[7]=_Hora[6];_Hora[6]='0';}
-			_Hora[8]='\0';
-			printf("0. Atras\n1. Fecha %s (AAA-MM-DD)\n2. Hora %s\n3. Actualizar automáticamente\n4. Ayuda\n",(char *)fecha_actual,(char *)_Hora);
-		break;
-		default:
-			pos_menu_actual = menu_main;
-			printf("1. Mensaje\n2. Configuración Web\n3. Ayuda\n");
-		break;
-	}
-}
-
-
-/**
- * @brief Si se presionó un número, se mueve a travéz del menu
+ * @brief	Cambia la posición actual del menú navegando según las opciones mostradas
+ * @note	La navegación por el menú es a travéz de números
+ * @param	Número recibido por serial para mueverse a travéz del menú
  */
 void move_menu(uint8_t numero_ingresado){
 	switch (pos_menu_actual){
@@ -479,6 +415,9 @@ void display_help(void){
 	}
 }
 
+/**
+ * @brief Muestra el mensaje de ayuda para la posición del menu inicial
+ */
 void display_help_main(void){
 	printf("\n----------------------------------------------------------------------------------------\n");
 	printf("\nPara navegar por el menú envíe números de 0 al 9.\n");
@@ -509,6 +448,74 @@ void display_comds_list(void){
 	printf("	$menu y $main:\n");
 	printf("		Muestra el menu principal.\n");
 	printf("\n----------------------------------------------------------------------------------------\n\n");
+}
+
+
+/********************** external functions definition ************************/
+
+uint8_t USB_get_input(void){
+    char ch[2] = {0,0};
+    fgets(ch, 2, stdin); // @suppress("Field cannot be resolved") // @suppress("Symbol is not resolved")
+    if(ch[0]==0){	/*Si no se recibe ningun caracter la función devuelve 0*/
+    	return 0;
+    }
+    if(ch[0]=='\r'||ch[0]==';'){
+    	ch[0]='\n';
+    }
+    if((ch[0]!=0)&&(i_USB_input<USB_INPUT_LENGHT)&&((ch[0]!='\n'))){
+    	USB_input[i_USB_input]=ch[0];
+    	USB_input[i_USB_input+1]='\0';
+        i_USB_input++;
+    }
+    if((i_USB_input>=USB_INPUT_LENGHT)||(ch[0]=='\n')){
+    	//Hacer un flush del buffer stdin
+        analizar_input_USB();
+    }
+    return 1;
+}
+
+
+void display_menu(void){
+	printf("\n\n    ----  MENU  ----\n");
+	switch (pos_menu_actual){
+		case menu_main:
+			printf("1. Mensaje\n2. Configuración Web\n3. Ayuda\n");
+		break;
+		case menu_mensaje:
+			printf("0. Atras\n1. Señal beacon\n2. Modo de señal\n3. Periodo de emisión [segundos]\n");
+			printf("4. Ventana [minutos]\n5. Inicio de emisión\n6. Ayuda\n");
+		break;
+		case menu_config_web:
+			printf("0. Atras\n1. LoRa Config\n2. WiFi Config\n3. FireBase config\n4. Fecha y Hora\n5. Ayuda\n");
+		break;
+		case menu_lora_config:
+			printf("0. Atras\n1. Network y Address del E22\n2. Velocidad de transmisión"
+					"\n3. Potencia de transmisión\n4. Frecuencia de transmisión\n5. Ayuda\n");
+		break;
+		case menu_wifi_config:
+			printf("0. Atras\n1. SSD\n2. WiFi PASS\n3. Ayuda\n");
+		break;
+		case menu_firebase_config:
+			printf("0. Atras\n1. Link\n2. Restablecer\n3. Ayuda\n");
+		break;
+		case menu_time_config:
+			uint8_t _Hora[9]={};
+			itoa(segundos_actuales/3600,(char *)_Hora,10);
+			if(_Hora[1]==0){_Hora[1]=_Hora[0];_Hora[0]='0';}
+			_Hora[2]=':';
+			itoa((segundos_actuales/60)%60,(char *)_Hora+3,10);
+			if(_Hora[4]==0){_Hora[4]=_Hora[3];_Hora[3]='0';}
+			_Hora[5]=':';
+			itoa(segundos_actuales%60,(char *)_Hora+6,10);
+			if(_Hora[7]==0){_Hora[7]=_Hora[6];_Hora[6]='0';}
+			_Hora[8]='\0';
+			printf("0. Atras\n1. Fecha %s (AAA-MM-DD)\n2. Hora %s\n3. Actualizar automáticamente\n4. Ayuda\n",(char *)fecha_actual,(char *)_Hora);
+		break;
+		default:
+			pos_menu_actual = menu_main;
+			printf("1. Mensaje\n2. Configuración Web\n3. Ayuda\n");
+		break;
+	}
 }
 
 /********************** end of file ******************************************/

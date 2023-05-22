@@ -8,6 +8,9 @@
 /********************** inclusions *******************************************/
 
 #include "API_Json.h"
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
 
 /********************** macros and definitions *******************************/
 
@@ -25,77 +28,6 @@ uint8_t get_Json_value(uint8_t *Json, uint8_t *key, uint8_t *value_return, uint8
 
 /********************** internal functions definition ************************/
 
-/********************** external functions definition ************************/
-
-/*
- * @brief Asigna valores por defecto a la estructura Json "Json_from_DB"
- */
-void iniciar_Json_from_DB(void){
-	Json_from_DB.Mensaje.key				= (uint8_t*)"Enviar";
-	strcpy((char*)Json_from_DB.Mensaje.value,"Mensaje de ejemplo");
-	Json_from_DB.Time_inicio_programado.key					= (uint8_t*)"Horario";
-	strcpy((char*)Json_from_DB.Time_inicio_programado.value,"10-00");
-	Json_from_DB.Periodo_seconds.key 	= (uint8_t*)"Periodo";
-	Json_from_DB.Periodo_seconds.value	= 60;
-	Json_from_DB.Ventana_minutes.key 	= (uint8_t*)"Ventana";
-	Json_from_DB.Ventana_minutes.value 	= 30;
-	Json_from_DB.Pass_to_WiFi.key 	= (uint8_t*)"Pasar_a_modo_WiFi";
-	Json_from_DB.Pass_to_WiFi.value = 0;
-}
-
-/*
- * @brief Actualiza los valores de la estructura Json a partir del String en formato Json
- * @param Puntero a la estructura Json a actualizar
- * @param Puntero al String con el Json a leer
- * @return 0 si hay un error, devuelve 1 si OK
- */
-uint8_t analizar_json(Json_struct_t *Json_struct, uint8_t *Json_String){
-	if(Json_struct==0||Json_String==0){
-		printf(">>ERROR>analizar_json()>Json_struct==0||Json_String==0\n");
-		return 0;
-	}
-	Json_from_DB.Mensaje.key				= (uint8_t*)"Enviar";
-	Json_from_DB.Time_inicio_programado.key	= (uint8_t*)"Horario";
-	Json_from_DB.Periodo_seconds.key 	= (uint8_t*)"Periodo";
-	Json_from_DB.Ventana_minutes.key 	= (uint8_t*)"Ventana";
-	Json_from_DB.Pass_to_WiFi.key 		= (uint8_t*)"Pasar_a_modo_WiFi";
-	/*Variables locales*/
-	uint8_t int_in_String[INT_IN_STRING_SIZE];
-	uint8_t int_control_error = 0;
-	/*Conversión de los Json_String_element_t*/
-	int_control_error += get_Json_value(Json_String,Json_struct->Mensaje.key,
-			Json_struct->Mensaje.value,
-			VALUE_STRING_MAX_LENGHT);
-	int_control_error += get_Json_value(Json_String,Json_struct->Time_inicio_programado.key,
-			Json_struct->Time_inicio_programado.value,VALUE_STRING_MAX_LENGHT);
-	/*Conversión de los Json_uint_element_t */
-	/*Tomar valor uint32_t de Periodo_seconds*/
-	int_control_error += get_Json_value(Json_String,Json_struct->Periodo_seconds.key,int_in_String,INT_IN_STRING_SIZE);
-	int_in_String[INT_IN_STRING_SIZE-1]='\0';
-	Json_struct->Periodo_seconds.value = (uint32_t)atoi((char *)int_in_String);
-	/*Tomar valor uint32_t de Ventana_minutes*/
-	int_control_error += get_Json_value(Json_String,Json_struct->Ventana_minutes.key,int_in_String,INT_IN_STRING_SIZE);
-	int_in_String[INT_IN_STRING_SIZE-1]='\0';
-	Json_struct->Ventana_minutes.value = (uint32_t)atoi((char *)int_in_String);
-	/*Tomar valor uint32_t de Pass_to_WiFi*/
-	int_control_error += get_Json_value(Json_String,Json_struct->Pass_to_WiFi.key,int_in_String,INT_IN_STRING_SIZE);
-	int_in_String[INT_IN_STRING_SIZE-1]='\0';
-	Json_struct->Pass_to_WiFi.value = (uint32_t)atoi((char *)int_in_String);
-	if(int_control_error!=CANT_ELEMENTOS_DE_JSON_STRUCT_T){	/*get_Json_value devuelve 1 si la conversión fué correcta*/
-		printf(">>ERROR>analizar_json()>int_control_error!=CANT_ELEMENTOS_DE_JSON_STRUCT_T\n");
-		return 0;
-	}
-	if(Json_struct->Mensaje.value==0){
-		printf(">>ERROR>analizar_json()>Json_struct->Mensaje.value==0\n");
-		return 0;
-	}if(Json_struct->Time_inicio_programado.value==0){
-		printf(">>ERROR>analizar_json()>Json_struct->Time_inicio_programado.value==0\n");
-		return 0;
-	}
-	return 1;
-}
-
-
 /**
  * @brief  Devuelve el valor del key solicitado del Json. En caso de no encontrarse devuelve 0. Si se encontró el valor devuelve 1.
  * @param  Puntero al String del Json
@@ -110,27 +42,27 @@ uint8_t get_Json_value(uint8_t *Json, uint8_t *key, uint8_t *value_return, uint8
     if(Json==0||key==0||value_return==0||return_max_lenght==0){
     	return 0;
     }
-    uint8_t *indexIn;								/*Inicio del value		*/
-    uint8_t *indexOut;								/*Fin del value			*/
-    indexIn=(uint8_t*)strstr((char*)Json, (char*)key);						/*Posicionarse al comienzo del key		*/
-    if(indexIn==0){						/*Si no encontró el key, strstr() devuelve 0		*/
+    uint8_t *indexIn;										/* Inicio del value		*/
+    uint8_t *indexOut;										/* Fin del value			*/
+    indexIn=(uint8_t*)strstr((char*)Json, (char*)key);		/* Posicionarse al comienzo del key		*/
+    if(indexIn==0){						/* Si no encontró el key, strstr() devuelve 0		*/
 		printf(">>ERROR>get_Json_value()>KEY NO ENCONTRADO:%s\n",(char*)key);
     	return 0;
     }
-    if(strlen((char*)indexIn)<strlen((char*)key)+3){	/*Si no posee largo suficiente para obtener valor devolver 0	*/
+    if(strlen((char*)indexIn)<strlen((char*)key)+3){	/* Si no posee largo suficiente para obtener valor devolver 0	*/
     	return 0;
     }
-    indexIn+=strlen((char*)key)+2;				/*Se posiciona justo despues del caracter ':' que separa key de value		*/
-    if(*indexIn=='"'){					/*Si después de ':' hay un '"', el value es un String y el value está entre comillas dobles*/
+    indexIn+=strlen((char*)key)+2;		/* Se posiciona justo despues del caracter ':' que separa key de value		*/
+    if(*indexIn=='"'){					/* Si después de ':' hay un '"', el value es un String y el value está entre comillas dobles*/
     	indexIn++;
         indexOut=(uint8_t*)strstr((char*)indexIn,"\"");
     } else {
-        indexOut=(uint8_t*)strstr((char*)indexIn,",");	/*Si value no es un String, al final del value hay una ',' separandolo del siguiente key */
-    	if(indexOut==0){ 	 	 	 	/*o hay un '}' indicando que es el fin del Json	 	 	 	 	 	 	 	 	 		 */
+        indexOut=(uint8_t*)strstr((char*)indexIn,",");	/* Si value no es un String, al final del value hay una ',' separandolo del siguiente key */
+    	if(indexOut==0){ 	 	 	 	/* o hay un '}' indicando que es el fin del Json	 	 	 	 	 	 	 	 	 		 */
     		indexOut=(uint8_t*)strstr((char*)indexIn,"}");
     	}
     }
-	if(indexOut==0){	/*Si no se encontro el caracter de cierre del value se devuelve 0*/
+	if(indexOut==0){	/* Si no se encontro el caracter de cierre del value se devuelve 0 */
 		return 0;
 	}
 	uint32_t value_lenght = indexOut-indexIn;
@@ -142,5 +74,69 @@ uint8_t get_Json_value(uint8_t *Json, uint8_t *key, uint8_t *value_return, uint8
     return 1;
 }
 
-/********************** end of file ******************************************/
+/********************** external functions definition ************************/
 
+void iniciar_Json_from_DB(void){
+	Json_from_DB.Mensaje.key				= (uint8_t*)"Enviar";
+	strcpy((char*)Json_from_DB.Mensaje.value,"Mensaje de ejemplo");
+	Json_from_DB.Time_inicio_programado.key					= (uint8_t*)"Horario";
+	strcpy((char*)Json_from_DB.Time_inicio_programado.value,"10-00");
+	Json_from_DB.Periodo_seconds.key 	= (uint8_t*)"Periodo";
+	Json_from_DB.Periodo_seconds.value	= 60;
+	Json_from_DB.Ventana_minutes.key 	= (uint8_t*)"Ventana";
+	Json_from_DB.Ventana_minutes.value 	= 30;
+	Json_from_DB.Pass_to_WiFi.key 	= (uint8_t*)"Pasar_a_modo_WiFi";
+	Json_from_DB.Pass_to_WiFi.value = 0;
+}
+
+
+uint8_t analizar_json(Json_struct_t *Json_struct, uint8_t *Json_String){
+	if(Json_struct==0||Json_String==0){
+		printf(">>ERROR>analizar_json()>Json_struct==0||Json_String==0\n");
+		return 0;
+	}
+	Json_from_DB.Mensaje.key				= (uint8_t*)"Enviar";
+	Json_from_DB.Time_inicio_programado.key	= (uint8_t*)"Horario";
+	Json_from_DB.Periodo_seconds.key 	= (uint8_t*)"Periodo";
+	Json_from_DB.Ventana_minutes.key 	= (uint8_t*)"Ventana";
+	Json_from_DB.Pass_to_WiFi.key 		= (uint8_t*)"Pasar_a_modo_WiFi";
+	/* Variables locales */
+	uint8_t int_in_String[INT_IN_STRING_SIZE];
+	uint8_t int_control_error = 0;
+	/* Conversión de los Json_String_element_t */
+	int_control_error += get_Json_value(Json_String,Json_struct->Mensaje.key,
+			Json_struct->Mensaje.value,
+			VALUE_STRING_MAX_LENGHT);
+	int_control_error += get_Json_value(Json_String,Json_struct->Time_inicio_programado.key,
+			Json_struct->Time_inicio_programado.value,VALUE_STRING_MAX_LENGHT);
+	/* Conversión de los Json_uint_element_t */
+	/* Tomar valor uint32_t de Periodo_seconds */
+	int_control_error += get_Json_value(Json_String,Json_struct->Periodo_seconds.key,int_in_String,INT_IN_STRING_SIZE);
+	int_in_String[INT_IN_STRING_SIZE-1]='\0';
+	Json_struct->Periodo_seconds.value = (uint32_t)atoi((char *)int_in_String);
+	/* Tomar valor uint32_t de Ventana_minutes */
+	int_control_error += get_Json_value(Json_String,Json_struct->Ventana_minutes.key,int_in_String,INT_IN_STRING_SIZE);
+	int_in_String[INT_IN_STRING_SIZE-1]='\0';
+	Json_struct->Ventana_minutes.value = (uint32_t)atoi((char *)int_in_String);
+	/* Tomar valor uint32_t de Pass_to_WiFi */
+	int_control_error += get_Json_value(Json_String,Json_struct->Pass_to_WiFi.key,int_in_String,INT_IN_STRING_SIZE);
+	int_in_String[INT_IN_STRING_SIZE-1]='\0';
+	Json_struct->Pass_to_WiFi.value = (uint32_t)atoi((char *)int_in_String);
+	if(int_control_error!=CANT_ELEMENTOS_DE_JSON_STRUCT_T){	/* get_Json_value devuelve 1 si la conversión fué correcta */
+		printf(">>ERROR>analizar_json()>int_control_error!=CANT_ELEMENTOS_DE_JSON_STRUCT_T\n");
+		return 0;
+	}
+	if(Json_struct->Mensaje.value==0){
+		printf(">>ERROR>analizar_json()>Json_struct->Mensaje.value==0\n");
+		return 0;
+	}if(Json_struct->Time_inicio_programado.value==0){
+		printf(">>ERROR>analizar_json()>Json_struct->Time_inicio_programado.value==0\n");
+		return 0;
+	}
+	return 1;
+}
+
+
+
+
+/********************** end of file ******************************************/

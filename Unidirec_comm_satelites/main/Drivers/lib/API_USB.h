@@ -10,9 +10,8 @@
 
 /********************** inclusions *******************************************/
 
-#include "stdio.h"
-#include "main.h"
-#include "driver/uart.h"
+#include <driver/uart.h>
+#include <stdint.h>
 
 /********************** macros and definitions *******************************/
 
@@ -34,7 +33,17 @@ typedef enum{
 
 /********************** external functions declaration ***********************/
 
+/**
+ * @brief Revisa si hay caracteres de entrada por USB. Con cada llamada a la función toma un caracter adicional.
+ * 		  Guarda los caracteres recibidos en el String USB_input[].
+ * 		  Al alcanzarse el largo máximo o detectar un caracter de finalización llama a la función analizar_input_USB()
+ * @return Devuelve 1 si se recibió un caracter por USB. En caso de que no haya nada en el buffer devuelve 0.
+ */
 uint8_t USB_get_input(void);
+
+/**
+ * @brief Se muestra las opciones del menú actual por el puerto serie.
+ */
 void display_menu(void);
 
 #endif /* MAIN_DRIVERS_LIB_API_USB_H_ */

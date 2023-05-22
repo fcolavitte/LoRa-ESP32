@@ -6,7 +6,10 @@
  */
 
 #include "API_E22.h"
-#include <API_Time.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 /********************** inclusions *******************************************/
 

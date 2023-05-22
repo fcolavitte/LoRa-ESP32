@@ -19,9 +19,7 @@
 
 /********************** inclusions *******************************************/
 
-#include "main.h"
-#include "esp_http_client.h"
-#include "API_Json.h"
+#include <stdint.h>
 
 /********************** macros and definitions *******************************/
 
@@ -36,14 +34,30 @@
 
 /********************** external functions declaration ***********************/
 
+/**
+ * @brief Solicita el Json completo de la base de datos web de FireBase y lo analiza para obtener los valores de los keys.
+ * @note  Los valores se guardan en la estructura  Json_struct_t Json_from_DB.
+ * @note  Si se quiere usar los valores de Json_from_DB se debe usar las funciones get_firebase_*** de éste archivo.
+ */
 void client_get_Json(void);
+
+/**
+ * @brief Se envía por puerto serie los pares key-value devueltos por el json de Firebase.
+ */
+void print_firebase_dates(void);
+
+/**
+ * @brief Envía un POST que modifique el valor de Pass_to_WiFi de FireBase a 0
+ */
 void clear_firebase_pass_to_WiFi(void);
+
+/* Funciones aún sin implementar */
 uint8_t *get_firebase_message(void);
 uint8_t *get_firebase_Time_inicio_programado(void);
 uint32_t get_firebase_Periodo_seconds(void);
 uint32_t get_firebase_Ventana_minutes(void);
 uint8_t  get_firebase_pass_to_WiFi(void);
-void print_firebase_dates(void);
+
 
 #endif /* MAIN_DRIVERS_LIB_API_FIREBASE_H_ */
 

@@ -8,6 +8,9 @@
 /********************** inclusions *******************************************/
 
 #include "API_Firebase.h"
+#include "API_Json.h"
+#include <esp_http_client.h>
+#include <stdint.h>
 
 /********************** macros and definitions *******************************/
 
@@ -67,11 +70,6 @@ esp_err_t client_event_POST_response_handler(esp_http_client_event_handle_t evt)
 
 /********************** external functions definition ************************/
 
-/**
- * @brief Solicita el Json completo de la base de datos web de FireBase y lo analiza para obtener los valores de los keys.
- * @note  Los valores se guardan en la estructura  Json_struct_t Json_from_DB.
- * @note  Si se quiere usar los valores de Json_from_DB se debe usar las funciones get_firebase_*** de éste archivo.
- */
 void client_get_Json(void) {
     esp_http_client_config_t config_get = {
         .port = PORT,
@@ -86,6 +84,7 @@ void client_get_Json(void) {
     esp_http_client_cleanup(client);
 }
 
+
 void print_firebase_dates(void){
 	printf(">> Datos recibidos desde FireBase:\n");
 	printf("	>> Enviar: %s\n",Json_from_DB.Mensaje.value);
@@ -93,6 +92,23 @@ void print_firebase_dates(void){
 	printf("	>> Periodo: %d\n",Json_from_DB.Periodo_seconds.value);
 	printf("	>> Ventana: %d\n",Json_from_DB.Ventana_minutes.value);
 	printf("	>> Pass_to_WiFi: %d\n",Json_from_DB.Pass_to_WiFi.value);
+}
+
+
+void clear_firebase_pass_to_WiFi(void){
+    esp_http_client_config_t config_post = {
+        .port = PORT,
+        .url = "https://prueba-iot-satellogic-default-rtdb.firebaseio.com/Pasar_a_modo_WiFi.json",
+        .method = HTTP_METHOD_PUT,
+        .username = USERNAME,
+        .password = PASSWORD,
+        .event_handler = client_event_POST_response_handler
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config_post);
+    esp_http_client_set_post_field(client, "0", strlen("0"));
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_perform(client);
+    esp_http_client_cleanup(client);
 }
 
 
@@ -111,26 +127,5 @@ uint32_t get_firebase_Ventana_minutes(void){
 uint8_t get_firebase_pass_to_WiFi(void){
 	return (uint8_t)Json_from_DB.Pass_to_WiFi.value;
 }
-
-
-/**
- * @brief Envía un POST que modifique el valor de Pass_to_WiFi de FireBase a 0
- */
-void clear_firebase_pass_to_WiFi(void){
-    esp_http_client_config_t config_post = {
-        .port = PORT,
-        .url = "https://prueba-iot-satellogic-default-rtdb.firebaseio.com/Pasar_a_modo_WiFi.json",
-        .method = HTTP_METHOD_PUT,
-        .username = USERNAME,
-        .password = PASSWORD,
-        .event_handler = client_event_POST_response_handler
-    };
-    esp_http_client_handle_t client = esp_http_client_init(&config_post);
-    esp_http_client_set_post_field(client, "0", strlen("0"));
-    esp_http_client_set_header(client, "Content-Type", "application/json");
-    esp_http_client_perform(client);
-    esp_http_client_cleanup(client);
-}
-
 
 /********************** end of file ******************************************/

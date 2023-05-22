@@ -7,8 +7,8 @@
 
 /********************** inclusions *******************************************/
 
-#include <driver/spi_master>
-#include "hal/spi_hal.h"
+#include <driver/spi_master.h>
+#include <hal/spi_hal.h>
 
 /********************** macros and definitions *******************************/
 

@@ -6,11 +6,15 @@
  */
 
 /********************** inclusions *******************************************/
-#include <API_Time.h>
-#include "main.h"
+
+#include "MEF.h"
+#include "API_Time.h"
+#include "API_Json.h"
 #include "API_WiFi.h"
 #include "API_Firebase.h"
 #include "API_USB.h"
+#include <stdint.h>
+#include <stdio.h>
 
 /********************** macros and definitions *******************************/
 
@@ -60,21 +64,21 @@ extern uint8_t pass_to_WiFi;
 /********************** external functions definition ************************/
 
 void start_MEF(void){
-	/*Cargar estados de la MEF*/
+	/* Cargar estados de la MEF */
 	MEF_mode = WiFi_mode;
 	MEF_mode_previo = WiFi_mode;
 	pos_menu_actual = menu_main;
-	/*Conectividad*/
+	/* Conectividad */
 	WiFiConect();
-	//Verificar conexión WiFi
+	/* Verificar conexión WiFi */
 	vTaskDelay(5000/ portTICK_PERIOD_MS);
 	print_MAC();
 	printf("\n\n");
-	/*Cargar datos desde FireBase*/
+	/* Cargar datos desde FireBase */
 	iniciar_Json_from_DB();
 	client_get_Json();
 	print_firebase_dates();
-	/*Cargando hora del sistema*/
+	/* Cargando hora del sistema */
 	UTP_init();
 	display_menu();
 	delayInit(&delay_get_json,10);
@@ -85,7 +89,7 @@ void start_MEF(void){
 }
 
 void update_MEF(void){
-	if(USB_get_input()){	/*Si se recibe algo por USB se debe pasar a USB_mode*/
+	if(USB_get_input()){	/* Si se recibe algo por USB se debe pasar a USB_mode */
 		MEF_mode = USB_mode;
 		if(pass_to_WiFi==1){
 			MEF_mode = WiFi_mode;

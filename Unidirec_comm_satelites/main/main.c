@@ -7,7 +7,9 @@
 
 /********************** inclusions *******************************************/
 
-#include "main.h"
+#include "MEF.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 /********************** macros and definitions *******************************/
 

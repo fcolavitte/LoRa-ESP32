@@ -1,5 +1,5 @@
 /*
- * @file   : API_delay.c
+ * @file   : API_Time.c
  * @date   : Mar 04, 2023
  * @author : Colavitte Facundo G. <facundocolavitte@gmail.com>
  * @version	v1.0.0
@@ -7,13 +7,13 @@
 
 /********************** inclusions *******************************************/
 
-#include "../lib/API_Time.h"
-#include "freertos/timers.h"
+#include "API_Time.h"
+#include <stdint.h>
+#include <freertos/timers.h>
 
 /********************** macros and definitions *******************************/
 
 #define DEBUG 0
-#define compile 1
 
 /********************** internal data declaration ****************************/
 
@@ -45,6 +45,7 @@ void get_UTP(void) {
     esp_http_client_cleanup(client);
 }
 
+
 esp_err_t client_event_UTP_handler(esp_http_client_event_handle_t evt) {
     if(evt->event_id==HTTP_EVENT_ON_DATA) {
     	segundos_actuales=0;
@@ -72,6 +73,7 @@ esp_err_t client_event_UTP_handler(esp_http_client_event_handle_t evt) {
     return ESP_OK;
 }
 
+
 void vTimerCallback(TimerHandle_t pxTimer){
 #if DEBUG == 1
 	printf(">>Mensaje desde dentro del Timer\n");
@@ -83,6 +85,7 @@ void vTimerCallback(TimerHandle_t pxTimer){
 	}
 }
 
+
 void UTP_init(void){
 	get_UTP();
 	printf(">>Iniciando Timer\n");
@@ -90,13 +93,6 @@ void UTP_init(void){
 	xTimerStart(xTimer,0);
 }
 
-#if compile == 1
-/*
- * @brief	Inicializa una estructura delay
- * @param	Puntero a estructura delay
- * @param	Duración del retardo no bloqueante en segundos
- * @return	None
- */
 void delayInit(delay_t * delay, uint32_t duration) {
 	if(delay != 0 && duration > 0 && duration < MAX_DELAY){	//Comprobación de parámetros de entrada
 		delay->startTime = segundos_actuales;
@@ -108,11 +104,7 @@ void delayInit(delay_t * delay, uint32_t duration) {
 
 }
 
-/*
- * @brief	Actualización y lectura del estado del delay. Reinicia el mismo si este ya finalizó
- * @param	Puntero a estructura delay
- * @return	True si terminó retardo, sino False
- */
+
 bool_t delayRead(delay_t * delay) {
 	if(delay!=0) {	//Comprobación de parámetro de entrada
 		if(delay->running==0) {
@@ -131,12 +123,6 @@ bool_t delayRead(delay_t * delay) {
 }
 
 
-/*
- * @brief	Cambio del valor de retardo del delay
- * @param	Puntero a estructura delay
- * @param	Nueva duración del retardo no bloqueante en segundos
- * @return	None
- */
 void delayWrite(delay_t * delay, uint32_t duration) {
 	if(delay != NULL && duration > 0 && duration < MAX_DELAY) {
 		delay->duration=duration;
@@ -145,6 +131,5 @@ void delayWrite(delay_t * delay, uint32_t duration) {
 	}
 
 }
-#endif
 
 /********************** end of file ******************************************/

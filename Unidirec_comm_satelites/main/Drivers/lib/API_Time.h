@@ -9,8 +9,8 @@
 
 /********************** inclusions *******************************************/
 
-#include "stdint.h"
-#include "esp_http_client.h"
+#include <stdint.h>
+#include <esp_http_client.h>
 
 /********************** macros and definitions *******************************/
 
@@ -30,12 +30,44 @@ typedef struct{
 
 /********************** external functions declaration ***********************/
 
-void delayInit( delay_t *delay, uint32_t duration );
-bool_t delayRead( delay_t *delay );
-void delayWrite( delay_t *delay, uint32_t duration );
+/**
+ * @brief	Inicializa una estructura delay
+ * @param	Puntero a estructura delay
+ * @param	Duración del retardo no bloqueante en segundos
+ * @return	None
+ */
+void delayInit(delay_t *delay, uint32_t duration);
+
+/**
+ * @brief	Actualización y lectura del estado del delay. Reinicia el mismo si este ya finalizó
+ * @param	Puntero a estructura delay
+ * @return	True si terminó retardo, sino False
+ */
+bool_t delayRead(delay_t *delay);
+
+/**
+ * @brief	Cambio del valor de retardo del delay
+ * @param	Puntero a estructura delay
+ * @param	Nueva duración del retardo no bloqueante en segundos
+ * @return	None
+ */
+void delayWrite(delay_t *delay, uint32_t duration);
+
+/**
+ * @brief	Solicitar hora actual a servidor UTP (Network Time Protocol)
+ */
 void get_UTP(void);
-esp_err_t client_event_UTP_handler(esp_http_client_event_handle_t evt);
+
+
+/**
+ * @brief	Iniciar la función para control de hora global del dispositivo.
+ */
 void UTP_init(void);
+
+/**
+ * @brief	Función callback del servidor UTP (Network Time Protocol)
+ */
+esp_err_t client_event_UTP_handler(esp_http_client_event_handle_t evt);
 
 #endif /* MAIN_DRIVERS_LIB_API_TIME_H_ */
 
