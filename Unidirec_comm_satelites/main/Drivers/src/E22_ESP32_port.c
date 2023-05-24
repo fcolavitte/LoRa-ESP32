@@ -9,6 +9,7 @@
 
 #include <driver/spi_master.h>
 #include <soc/spi_pins.h>
+#include <driver/gpio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "API_E22.h"
@@ -28,9 +29,9 @@ spi_device_handle_t hspi_device;
 
 void driver_HAL_spi_init(void);
 uint8_t driver_HAL_transaction(uint8_t *tx_buffer, uint8_t tx_length, uint8_t *rx_buffer, uint8_t rx_length);
-void driver_HAL_gpio_init(uint8_t GPIO_num, bool_t GPIO_is_input);
-void driver_HAL_GPIO_write(uint8_t GPIO, bool_t state);
-bool_t driver_HAL_GPIO_read(uint8_t GPIO);
+void driver_HAL_gpio_init(uint8_t GPIO_num, bool GPIO_is_input);
+void driver_HAL_GPIO_write(uint8_t GPIO, bool state);
+bool driver_HAL_GPIO_read(uint8_t GPIO);
 
 /********************** internal data definition *****************************/
 
@@ -109,7 +110,7 @@ uint8_t driver_HAL_transaction(uint8_t *tx_buffer, uint8_t tx_length, uint8_t *r
  *	@param	[uint8_t] GPIO_num: Número del GPIO.
  *	@param	[bool_t] GPIO_is_input: 1 si el pin es INPUT, 0 si el pin es OUTPUT.
  */
-void driver_HAL_gpio_init(uint8_t GPIO_num, bool_t GPIO_is_input) {
+void driver_HAL_gpio_init(uint8_t GPIO_num, bool GPIO_is_input) {
 	gpio_config_t pGPIOConfig;
 	pGPIOConfig.pin_bit_mask = (1 << GPIO_num);
 	if(GPIO_is_input) {
@@ -129,7 +130,7 @@ void driver_HAL_gpio_init(uint8_t GPIO_num, bool_t GPIO_is_input) {
  *	@param	[uint8_t] GPIO: Número de GPIO a controlar.
  *	@param	[bool_t] state: 0 para valor lógico bajo y 1 para valor lógico alto.
  */
-void driver_HAL_GPIO_write(uint8_t GPIO, bool_t state) {
+void driver_HAL_GPIO_write(uint8_t GPIO, bool state) {
 	gpio_set_level(GPIO, state);
 }
 
@@ -139,7 +140,7 @@ void driver_HAL_GPIO_write(uint8_t GPIO, bool_t state) {
  *	@param	[uint8_t] GPIO: Número de GPIO a leer.
  *	@retval	[bool_t]: 0 para valor lógico bajo y 1 para valor lógico alto.
  */
-bool_t driver_HAL_GPIO_read(uint8_t GPIO) {
+bool driver_HAL_GPIO_read(uint8_t GPIO) {
 	uint8_t retvalue = 0;
 	retvalue = gpio_get_level(GPIO);
 	return retvalue;

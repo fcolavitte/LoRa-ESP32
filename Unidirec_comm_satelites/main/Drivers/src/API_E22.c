@@ -24,9 +24,9 @@
 
 extern void driver_HAL_spi_init(void);
 extern uint8_t driver_HAL_transaction(uint8_t *tx_buffer, uint8_t tx_length, uint8_t *rx_buffer, uint8_t rx_length);
-extern void driver_HAL_gpio_init(uint8_t GPIO_num, bool_t GPIO_is_input);
-extern void driver_HAL_GPIO_write(uint8_t GPIO, bool_t state);
-extern bool_t driver_HAL_GPIO_read(uint8_t GPIO);
+extern void driver_HAL_gpio_init(uint8_t GPIO_num, bool GPIO_is_input);
+extern void driver_HAL_GPIO_write(uint8_t GPIO, bool state);
+extern bool driver_HAL_GPIO_read(uint8_t GPIO);
 
 /********************** internal data definition *****************************/
 
@@ -88,37 +88,150 @@ void driver_E22_read_from_buffer(uint8_t offset, uint8_t* rx_buffer, uint8_t rx_
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-void driver_E22_setTx(uint32_t timeOut){
-	uint8_t parameters[3];
-	parameters[0] =(uint8_t)((timeOut >> 16) & 0xFF);
-	parameters[1] =(uint8_t)((timeOut >> 8)  & 0xFF);
-	parameters[2] =(uint8_t)((timeOut)       & 0xFF);
-
-	uint8_t n_parameters = 3;
-
-	_E22_write_command(OPCODE_SETTX, parameters, n_parameters);
+void driver_E22_write_in_registro(uint8_t *address, uint8_t* tx_buffer, uint8_t tx_length) {
+	if(MAX_SIZE_SPI_BUFFERS - 3 > tx_length) {
+		tx_length = MAX_SIZE_SPI_BUFFERS - 3;
+	}
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MOSI_buffer[MAX_SIZE_SPI_BUFFERS] = {};
+	MOSI_buffer[0] = OPCODE_WRITEBUFFER;
+	MOSI_buffer[1] = address[0];
+	MOSI_buffer[2] = address[1];
+	memcpy(&(MOSI_buffer[3]), tx_buffer, tx_length);
+	driver_HAL_transaction(MOSI_buffer, tx_length, NULL, 0);
 }
 
-/**
- *	@note	Con "payloadlength" se define la cantidad de bytes a mandar en modo Tx
- *			La función TxBaseAddr() define el inicio desde donde se comienza a transmitir o la función SetBufferBaseAddresses() que define también Rx
- */
-void driver_E22_SetPacketParams(void/* ??? */){
+
+void driver_E22_read_from_registro(uint8_t *address, uint8_t* rx_buffer, uint8_t rx_length) {
+	if(MAX_SIZE_SPI_BUFFERS - 4 > rx_length) {
+		rx_length = MAX_SIZE_SPI_BUFFERS - 4;
+	}
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MOSI_buffer[MAX_SIZE_SPI_BUFFERS] = {};
+	MOSI_buffer[0] = OPCODE_READREGISTER;
+	MOSI_buffer[1] = address[0];
+	MOSI_buffer[2] = address[1];
+	MOSI_buffer[3] = NOP;
+	driver_HAL_transaction(MOSI_buffer, 4, rx_buffer, rx_length);
+}
+
+
+void driver_E22_GetRxBufferStatus(uint8_t* PayloadLengthRx, uint8_t* RxBufferPointer) {
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MISO_buffer[2] = {};
+	uint8_t MOSI_buffer[2] = {};
+	MOSI_buffer[0] = OPCODE_GetRxBufferStatus;
+	MOSI_buffer[1] = NOP;
+	driver_HAL_transaction(MOSI_buffer, 2, MISO_buffer, 2);
+	*PayloadLengthRx = MISO_buffer[0];
+	*RxBufferPointer = MISO_buffer[1];
+}
+
+
+void driver_E22_SetBufferBaseAddress(uint8_t tx_base_adress, uint8_t rx_base_adress) {
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MOSI_buffer[3] = {};
+	MOSI_buffer[0] = OPCODE_SetBufferBaseAddress;
+	MOSI_buffer[1] = tx_base_adress;
+	MOSI_buffer[2] = rx_base_adress;
+	driver_HAL_transaction(MOSI_buffer, 3, NULL, 0);
+}
+
+
+void driver_E22_SetTx_poner_modulo_en_modo_tx(uint32_t timeout) {
+	if(timeout > 0xFFFFFF) {
+		timeout = 0xFFFFFF;
+	}
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MOSI_buffer[4] = {};
+	MOSI_buffer[0] = OPCODE_SET_TX_MODE;
+	MOSI_buffer[1] = (uint8_t)(timeout >> 16);
+	MOSI_buffer[2] = (uint8_t)(timeout >> 8);
+	MOSI_buffer[3] = (uint8_t)(timeout >> 0);
+	driver_HAL_transaction(MOSI_buffer, 4, NULL, 0);
+}
+
+
+void driver_E22_SetRx_poner_modulo_en_modo_rx(uint32_t timeout) {
+	if(timeout > 0xFFFFFF) {
+		timeout = 0xFFFFFF;
+	}
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MOSI_buffer[4] = {};
+	MOSI_buffer[0] = OPCODE_SET_RX_MODE;
+	MOSI_buffer[1] = (uint8_t)((timeout >> 16) & 0xFF);
+	MOSI_buffer[2] = (uint8_t)((timeout >> 8)  & 0xFF);
+	MOSI_buffer[3] = (uint8_t)((timeout >> 0)  & 0xFF);
+	driver_HAL_transaction(MOSI_buffer, 4, NULL, 0);
+}
+
+
+void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength, bool Header_is_fixed_length, uint8_t bytes_a_enviar) {
+	if(Header_is_fixed_length) {
+		Header_is_fixed_length = 1;
+	}
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MOSI_buffer[7] = {};
+	MOSI_buffer[0] = OPCODE_SetPacketParams;					/* OPCODE */
+	MOSI_buffer[1] = (uint8_t)((PreambleLength >> 8) & 0xFF);	/* preambulo 1 - PreambleLength		*/
+	MOSI_buffer[2] = (uint8_t)((PreambleLength >> 0) & 0xFF);	/* preambulo 2 - PreambleLength		*/
+	MOSI_buffer[3] = Header_is_fixed_length;					/* preambulo 3 - HeaderType			*/
+	MOSI_buffer[4] = bytes_a_enviar;							/* preambulo 4 - PayloadLength		*/
+	MOSI_buffer[5] = 0;											/* preambulo 5 - CRC - Configurado como OFF */
+	MOSI_buffer[6] = 0;											/* preambulo 6 - InvertIQ - Configurado como Standard IQ setup */
+	driver_HAL_transaction(MOSI_buffer, 7, NULL, 0);
 
 }
 
-void driver_E22_GetRxBufferStatus(){
+
+void driver_E22_SetPacketType(bool transmitir_en_modo_LoRa) {
+	if(transmitir_en_modo_LoRa) {
+		transmitir_en_modo_LoRa = 1;
+	}
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MOSI_buffer[2] = {};
+	MOSI_buffer[0] = OPCODE_SetPacketType;
+	MOSI_buffer[1] = transmitir_en_modo_LoRa;
+	driver_HAL_transaction(MOSI_buffer, 2, NULL, 0);
+}
+
+
+void driver_E22_SetRfFrequency(uint32_t frec_deseada_MHz) {
+	/* 1,048576 de 2^25 / F_XTAL siendo F_XTAL=32MHz y * 10^6 porque la frecuencia se ingresa en MHz a ésta función */
+	uint32_t param_RfFreq = frec_deseada_MHz * 1048576;
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	uint8_t MOSI_buffer[5] = {};
+	MOSI_buffer[0] = OPCODE_SET_RF_FREC;
+	MOSI_buffer[1] = (uint8_t)((param_RfFreq >> 24) & 0xFF);
+	MOSI_buffer[2] = (uint8_t)((param_RfFreq >> 16) & 0xFF);
+	MOSI_buffer[3] = (uint8_t)((param_RfFreq >> 8)  & 0xFF);
+	MOSI_buffer[4] = (uint8_t)((param_RfFreq >> 0)  & 0xFF);
+	driver_HAL_transaction(MOSI_buffer, 5, NULL, 0);
+}
+
+void driver_E22_setear_pin_TX_salida_potencia(void) {
+
+}
+
+void driver_E22_setear_pin_RX_entrada_aire(void) {
 
 }
 
