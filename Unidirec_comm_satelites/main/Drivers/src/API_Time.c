@@ -53,11 +53,11 @@ esp_err_t client_event_UTP_handler(esp_http_client_event_handle_t evt) {
         printf(">> Respuesta del servidor UTP: %.*s\n", evt->data_len,(char *)evt->data);
 #endif
         uint8_t *indexIn;
-        uint8_t time[9] = {};	/*HH:MM:SS\0*/
+        uint8_t time[9] = {};	/* HH:MM:SS\0 */
         indexIn=(uint8_t*)strstr((char *)evt->data, "\"datetime\":\"");
-        indexIn+=12;	/*Posicionarse al final de "\"datetime\":\""*/
+        indexIn+=12;	/* Posicionarse al final de "\"datetime\":\"" */
         strncpy((char *)fecha_actual,(char *)indexIn,10);
-        indexIn+=11;	/*Posicionarse donde comienza la hora*/
+        indexIn+=11;	/* Posicionarse donde comienza la hora */
         strncpy((char *)time,(char *)indexIn,8);
         uint8_t _hora[3]={};
         strncpy((char *)_hora,(char *)time,2);
@@ -94,19 +94,19 @@ void UTP_init(void){
 }
 
 void delayInit(delay_t * delay, uint32_t duration) {
-	if(delay != 0 && duration > 0 && duration < MAX_DELAY){	//Comprobación de parámetros de entrada
+	if(delay != 0 && duration > 0 && duration < MAX_DELAY){		/* Comprobación de parámetros de entrada */
 		delay->startTime = segundos_actuales;
 		delay->duration = duration;
-		delay->running = 0;//false
+		delay->running = 0;	/* false */
 	} else {
-		//Control de error
+		/* Control de error */
 	}
 
 }
 
 
 bool_t delayRead(delay_t * delay) {
-	if(delay!=0) {	//Comprobación de parámetro de entrada
+	if(delay!=0) {	/* Comprobación de parámetro de entrada */
 		if(delay->running==0) {
 			if(segundos_actuales - delay->startTime > delay->duration){
 				delay->running=1;//true
@@ -117,7 +117,7 @@ bool_t delayRead(delay_t * delay) {
 		}
 		return delay->running;
 	} else {
-		//Control de error
+		/* Control de error */
 		return 0;
 	}
 }
