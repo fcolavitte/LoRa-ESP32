@@ -69,6 +69,18 @@ void UTP_init(void);
  */
 esp_err_t client_event_UTP_handler(esp_http_client_event_handle_t evt);
 
+
+/**
+ * @brief	Función getter paraobtener la fecha actual en string en formato DD/MM/AAAA
+ */
+uint8_t* get_string_fecha(void);
+
+
+/**
+ * @brief	Función getter paraobtener la hora actual en string en formato HH:MM:SS
+ */
+uint8_t* get_string_hora(void);
+
 #endif /* MAIN_DRIVERS_LIB_API_TIME_H_ */
 
 /********************** end of file ******************************************/

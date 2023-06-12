@@ -11,7 +11,11 @@
 #include "API_E22.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-
+#include <time.h>
+#include <sys/time.h>
+#include <sys/times.h>
+#include <string.h>
+#include <stdlib.h>
 #include "E22_test_.h"
 
 /********************** macros and definitions *******************************/
@@ -31,16 +35,19 @@
 /********************** external functions definition ************************/
 
 #if test_E22 == 0
-
 void app_main(void) {
-	start_MEF();
 	driver_E22_init();
+	start_MEF();
 	while(1){
 		update_MEF();
         vTaskDelay(10/ portTICK_PERIOD_MS);
 	}
 }
 #endif
+
+
+
+
 
 
 #if test_E22 == 1

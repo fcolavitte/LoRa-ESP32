@@ -499,17 +499,8 @@ void display_menu(void){
 			printf("0. Atras\n1. Link\n2. Restablecer\n3. Ayuda\n");
 		break;
 		case menu_time_config:
-			uint8_t _Hora[9]={};
-			itoa(segundos_actuales/3600,(char *)_Hora,10);
-			if(_Hora[1]==0){_Hora[1]=_Hora[0];_Hora[0]='0';}
-			_Hora[2]=':';
-			itoa((segundos_actuales/60)%60,(char *)_Hora+3,10);
-			if(_Hora[4]==0){_Hora[4]=_Hora[3];_Hora[3]='0';}
-			_Hora[5]=':';
-			itoa(segundos_actuales%60,(char *)_Hora+6,10);
-			if(_Hora[7]==0){_Hora[7]=_Hora[6];_Hora[6]='0';}
-			_Hora[8]='\0';
-			printf("0. Atras\n1. Fecha %s (AAA-MM-DD)\n2. Hora %s\n3. Actualizar automáticamente\n4. Ayuda\n",(char *)fecha_actual,(char *)_Hora);
+			printf("0. Atras\n1. Fecha %s\n2. Hora %s\n3. Actualizar automáticamente\n4. Ayuda\n",
+					(char *)get_string_fecha(),(char *)get_string_hora());
 		break;
 		default:
 			pos_menu_actual = menu_main;
