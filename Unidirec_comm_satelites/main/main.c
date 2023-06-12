@@ -11,11 +11,6 @@
 #include "API_E22.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <time.h>
-#include <sys/time.h>
-#include <sys/times.h>
-#include <string.h>
-#include <stdlib.h>
 #include "E22_test_.h"
 
 /********************** macros and definitions *******************************/
