@@ -97,9 +97,47 @@ void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength,
 void driver_E22_SetPacketType(bool transmitir_en_modo_LoRa);
 void driver_E22_SetRfFrequency(uint32_t frec_deseada_MHz);
 
-void driver_E22_setear_pin_TX_salida_potencia(void);
-void driver_E22_setear_pin_RX_entrada_aire(void);
+void driver_E22_setear_pin_TX_salida_potencia(bool estado);
+void driver_E22_setear_pin_RX_entrada_aire(bool estado);
 
+
+/**
+ * @brief	Muestra por terminal serie la configuración del módulo E22
+ */
+void driver_E22_print_configuracion(void);
+
+
+/**
+ * @brief	Envía el string por aire.
+ */
+void driver_E22_send_message(uint8_t * p_message, uint8_t length);
+
+
+/**
+ * @brief	Recive un string por aire
+ */
+void driver_E22_recive_message(void);
+
+
+/**
+ * @brief	imprime por serie lo que se encuentra en el ring buffer interno del E22
+ * @note	Imprime los bytes en hexadecimal
+ */
+void driver_E22_print_hexadecimal_ring_buffer(void);
+
+/**
+ * @brief	imprime por serie lo que se encuentra en el ring buffer interno del E22
+ * @note	Imprime los bytes caracteres ascii
+ */
+void driver_E22_print_caracteres_ring_buffer(void);
+
+
+/*
+ *	METODOS GETTER y SETTER para la configuración LoRa
+ *
+ *
+ *
+ */
 #endif /* MAIN_DRIVERS_LIB_API_E22_H_ */
 
 /********************** end of file ******************************************/

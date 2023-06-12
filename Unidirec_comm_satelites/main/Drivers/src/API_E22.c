@@ -18,6 +18,17 @@
 
 /********************** internal data declaration ****************************/
 
+struct config_E22_s{
+	uint16_t PreambleLength;
+	bool Header_is_fixed_length;
+	uint32_t frec_deseada_MHz;
+};
+struct config_E22_s config_E22 = {
+		.PreambleLength = 1,
+		.Header_is_fixed_length = 1,
+		.frec_deseada_MHz = 915
+};
+
 /********************** internal functions declaration ***********************/
 
 /********************** external functions declaration ***********************/
@@ -227,12 +238,109 @@ void driver_E22_SetRfFrequency(uint32_t frec_deseada_MHz) {
 	driver_HAL_transaction(MOSI_buffer, 5, NULL, 0);
 }
 
-void driver_E22_setear_pin_TX_salida_potencia(void) {
 
+void driver_E22_setear_pin_TX_salida_potencia(bool estado) {
+	if(-1 != GPIO_TX_ENABLE){
+		driver_HAL_GPIO_write(GPIO_TX_ENABLE, estado);
+	}
 }
 
-void driver_E22_setear_pin_RX_entrada_aire(void) {
 
+void driver_E22_setear_pin_RX_entrada_aire(bool estado) {
+	if(-1 != GPIO_RX_ENABLE){
+		driver_HAL_GPIO_write(GPIO_RX_ENABLE, estado);
+	}
 }
+
+
+void driver_E22_print_configuracion(void) {
+	printf(">> Configuración del módulo E22:");
+	printf("        PreambleLength = %u\n", (unsigned int)config_E22.PreambleLength);
+	printf("        Header_is_fixed_length = %B\n", config_E22.Header_is_fixed_length);
+	printf("        frec_deseada_MHz = %04x\n", config_E22.frec_deseada_MHz);
+}
+
+
+void driver_E22_print_hexadecimal_ring_buffer(void) {
+	printf("Contenido del buffer del E22:");
+	for (uint16_t offset = 0; offset <256; offset++) {
+		if(0 == offset%8){
+			printf("\noffset %3d:",offset);
+		}
+		uint8_t rx_buffer;
+		driver_E22_read_from_buffer((uint8_t)offset, &rx_buffer, 1);
+		printf("0x%02x ", rx_buffer);
+		vTaskDelay(10/ portTICK_PERIOD_MS);
+	}
+	printf("\n");
+}
+
+
+void driver_E22_print_caracteres_ring_buffer(void) {
+	printf("Contenido del buffer del E22:");
+	for (uint16_t offset = 0; offset <256; offset++) {
+		if(0 == offset%8){
+			printf("\noffset %3d:",offset);
+		}
+		uint8_t rx_buffer;
+		driver_E22_read_from_buffer((uint8_t)offset, &rx_buffer, 1);
+		printf("%c ", rx_buffer);
+		vTaskDelay(10/ portTICK_PERIOD_MS);
+	}
+	printf("\n");
+}
+
+
+void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
+	/* Poner pin de not_reset en alto */
+	driver_HAL_GPIO_write(GPIO_E22_NRST, HIGH);
+    vTaskDelay(1);
+
+	/* Setear modo de transmisión como LoRa */
+	bool transmitir_en_modo_LoRa = 1;
+	driver_E22_SetPacketType(transmitir_en_modo_LoRa);
+    vTaskDelay(1);
+
+	/* Establecer que Rx y Tx en aire comiencen desde el byte 0 del buffer circular interno del E22 */
+	driver_E22_SetBufferBaseAddress(0, 0);
+    vTaskDelay(1);
+
+	/* Escribir en el buffer interno del E22 el string a enviar en la posición cero */
+	driver_E22_write_in_buffer(0, p_message, length);
+    vTaskDelay(1);
+
+	/* Avisar al E22 el largo de bytes a enviar */
+	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(config_E22.PreambleLength, config_E22.Header_is_fixed_length, length);
+    vTaskDelay(1);
+
+	/* Setear frecuencia a utilizar para envío de datos */
+	driver_E22_SetRfFrequency(config_E22.frec_deseada_MHz);
+    vTaskDelay(1);
+
+	/* Pasar módulo a modo Tx con timeout=0 */
+	driver_E22_setear_pin_TX_salida_potencia(HIGH);
+	vTaskDelay(1);
+    driver_E22_SetTx_poner_modulo_en_modo_tx(0);
+
+    /* Tras retorno de pin busy del E22 a low, poner pin de Tx en low*/
+    for (int i=0; i<10;i++) {
+        vTaskDelay(10/ portTICK_PERIOD_MS);
+        if(9 == i) {
+            printf(">> ERROR: El mensaje no se envió!\n");
+        }
+        if (0 == driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+        	driver_E22_setear_pin_TX_salida_potencia(LOW);
+        	i = 10;
+            printf(">> Mensaje enviado\n");
+        }
+    }
+}
+
+
+void driver_E22_recive_message(void) {
+}
+
+
+
 
 /********************** end of file ******************************************/

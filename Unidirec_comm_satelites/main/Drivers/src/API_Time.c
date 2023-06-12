@@ -131,10 +131,41 @@ uint8_t* get_string_hora(void){
 	struct tm* struct_tm_now;
 	struct_tm_now = localtime(&unixtime_now);
 	retvalue_string_hora[7] = '\0';
-	sprintf((char *)retvalue_string_hora, "%2d:%2d:%2d", struct_tm_now->tm_hour, struct_tm_now->tm_min, struct_tm_now->tm_sec);
+	sprintf((char *)retvalue_string_hora, "%02d:%02d:%02d", struct_tm_now->tm_hour, struct_tm_now->tm_min, struct_tm_now->tm_sec);
 	retvalue_string_hora[8] = '\0';
 	return retvalue_string_hora;
 }
+
+void set_hora_system_manualmente(uint8_t *HH_MM_SS){
+	uint8_t string_aux [3]={};
+	string_aux [2] = '\0';
+	time_t unixtime_now = get_time_unix_system();
+	struct tm* struct_tm_now;
+	struct_tm_now = localtime(&unixtime_now);
+	string_aux [0] = HH_MM_SS[0];
+	string_aux [1] = HH_MM_SS[1];
+	struct_tm_now->tm_hour = atoi(string_aux);
+	string_aux [0] = HH_MM_SS[3];
+	string_aux [1] = HH_MM_SS[4];
+	struct_tm_now->tm_min = atoi(string_aux);
+	string_aux [0] = HH_MM_SS[6];
+	string_aux [1] = HH_MM_SS[7];
+	struct_tm_now->tm_sec = atoi(string_aux);
+	/*
+	 *
+	 *
+	 *
+	 * Pasar de struc tm a struct timeval y usar settimeday
+	 *
+	 *
+	 *
+	 *
+	 */
+}
+void set_fecha_system_manualmente(uint8_t *DD_MM_AAAA){
+
+}
+
 
 
 #if USE_RTC_INTERNO == 0

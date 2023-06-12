@@ -81,6 +81,9 @@ uint8_t* get_string_fecha(void);
  */
 uint8_t* get_string_hora(void);
 
+void set_hora_system_manualmente(uint8_t *HH_MM_SS);
+void set_fecha_system_manualmente(uint8_t *DD_MM_AAAA);
+
 #endif /* MAIN_DRIVERS_LIB_API_TIME_H_ */
 
 /********************** end of file ******************************************/

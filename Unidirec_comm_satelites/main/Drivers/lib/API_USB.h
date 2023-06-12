@@ -25,8 +25,7 @@ typedef enum{
 	menu_config_web = 2,
 	menu_lora_config 	 = 21,
 	menu_wifi_config 	 = 22,
-	menu_firebase_config = 23,
-	menu_time_config 	 = 24
+	menu_time_config 	 = 23
 }pos_menu_t;
 
 /********************** external data declaration ****************************/

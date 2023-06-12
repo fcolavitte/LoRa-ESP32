@@ -9,11 +9,14 @@
 
 #include "API_Time.h"
 #include "API_USB.h"
+#include "API_E22.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <driver/uart.h>
 
 /********************** macros and definitions *******************************/
+
+#define compile_firebase_menu 0
 
 typedef enum{
 	USB_mode,
@@ -51,8 +54,6 @@ uint8_t pass_to_WiFi=0;
 /********************** external data definition *****************************/
 
 extern pos_menu_t pos_menu_actual;
-extern uint8_t fecha_actual[11];
-extern uint32_t segundos_actuales;
 
 /********************** internal functions definition ************************/
 
@@ -130,6 +131,7 @@ pos_menu_t read_cd_ID(void){
  */
 void send_message(void){
 	printf("Enviando \"%s\" por LoRa...\n",USB_input+1);
+	driver_E22_send_message(USB_input+1, sizeof(USB_input+1));
 }
 
 
@@ -170,10 +172,7 @@ void display_tree(void){
 	printf("       ├─ 2.2. WiFi Config\n");
 	printf("       │   ├─ 2.2.1. SSD\n");
 	printf("       │   └─ 2.2.2. WiFi PASS\n");
-	printf("       ├─ 2.3. FireBase config\n");
-	printf("       │   ├─ 2.3.1. Link\n");
-	printf("       │   └─ 2.3.2. Reestablecer\n");
-	printf("       └─ 2.4. Fecha y Hora\n");
+	printf("       └─ 2.3. Fecha y Hora\n");
 	printf("            ├─ 2.4.1. Fecha\n");
 	printf("            ├─ 2.4.2. Hora\n");
 	printf("            └─ 2.4.3. Actualización automática\n");
@@ -219,7 +218,7 @@ void move_menu(uint8_t numero_ingresado){
 					printf("Ingrese señal beacon:\n");
 				break;
 				case '2':
-					printf("Ingrese el modo de señal (puede ser repetido <0> o programado <1>):\n");
+					printf("Ingrese el modo de señal (puede estar manual <1>, repetido(beacon) <2> o programado <3>):\n");
 				break;
 				case '3':
 					printf("Ingrese el periodo de emisión [seg]:\n");
@@ -257,14 +256,10 @@ void move_menu(uint8_t numero_ingresado){
 					display_menu();
 				break;
 				case '3':
-					pos_menu_actual = menu_firebase_config;
-					display_menu();
-				break;
-				case '4':
 					pos_menu_actual = menu_time_config;
 					display_menu();
 				break;
-				case '5':
+				case '4':
 					display_help();
 					display_menu();
 				break;
@@ -283,18 +278,29 @@ void move_menu(uint8_t numero_ingresado){
 						display_menu();
 					break;
 					case '1':
-						printf("Ingrese el network al que pertenece y el Address del E22:\n");
+						printf("Ingrese la frecuencia de la portadora del E22 con la que se transmitirá:\n");
 					break;
 					case '2':
 						printf("Ingrese la velocidad de transmisión por aire del E22:\n");
 					break;
 					case '3':
-						printf("Ingrese la potencia de transmisión del E22:\n");
+						printf("Ingrese el preambulo del mensaje LoRa:\n");
 					break;
 					case '4':
-						printf("Ingrese la frecuencia de la portadora del E22 con la que se transmitirá:\n");
+						printf("El header del dataframe LoRa es de largo fijo? sí<1> o no <2>\n");
 					break;
 					case '5':
+						printf("Ingrese la potencia de transmisión del E22:\n");
+					break;
+					case '6':
+						driver_E22_print_hexadecimal_ring_buffer();
+						display_menu();
+					break;
+					case '7':
+						driver_E22_print_caracteres_ring_buffer();
+						display_menu();
+					break;
+					case '8':
 						display_help();
 						display_menu();
 					break;
@@ -330,31 +336,6 @@ void move_menu(uint8_t numero_ingresado){
 				break;
 			}
 		break;
-		case menu_firebase_config:
-			switch(numero_ingresado){
-				case '0':
-					pos_menu_actual = menu_config_web;
-					display_menu();
-				break;
-				case '1':
-					printf("Ingrese el Link de la base de datos al que conectarse:\n");
-				break;
-				case '2':
-					printf("Reestableciendo configuración de la base de datos...\n");
-					reset_config_dataBase();
-				break;
-				case '3':
-					display_help();
-					display_menu();
-				break;
-				default:
-					printf("\n\nOpcion no valida. Intente nuevamente.\n");
-					printf("Si quiere ingresar un comando ingrese \"$\" antes del texto.\n");
-					printf("Si quiere enviar un mensaje por LoRa ingrese \">\" antes del mensaje.\n\n");
-					display_menu();
-				break;
-			}
-		break;
 		case menu_time_config:
 			switch(numero_ingresado){
 				case '0':
@@ -369,6 +350,7 @@ void move_menu(uint8_t numero_ingresado){
 				break;
 				case '3':
 					get_UTP();
+					display_menu();
 				break;
 				case '4':
 					display_help();
@@ -403,8 +385,6 @@ void display_help(void){
 		case menu_config_web:
 		break;
 		case menu_wifi_config:
-		break;
-		case menu_firebase_config:
 		break;
 		case menu_time_config:
 		break;
@@ -482,21 +462,20 @@ void display_menu(void){
 			printf("1. Mensaje\n2. Configuración Web\n3. Ayuda\n");
 		break;
 		case menu_mensaje:
-			printf("0. Atras\n1. Señal beacon\n2. Modo de señal\n3. Periodo de emisión [segundos]\n");
-			printf("4. Ventana [minutos]\n5. Inicio de emisión\n6. Ayuda\n");
+			printf("0. Atras\n1. Señal beacon\n2. Modo de emisión automática - OFF\n3. Periodo de emisión [segundos]\n");
+			printf("4. Ventana [minutos]\n5. Inicio de emisión - HH:MM:SS\n6. Ayuda\n");
 		break;
 		case menu_config_web:
-			printf("0. Atras\n1. LoRa Config\n2. WiFi Config\n3. FireBase config\n4. Fecha y Hora\n5. Ayuda\n");
+			printf("0. Atras\n1. LoRa Config\n2. WiFi Config\n3. Fecha y Hora\n4. Ayuda\n");
 		break;
 		case menu_lora_config:
-			printf("0. Atras\n1. Network y Address del E22\n2. Velocidad de transmisión"
-					"\n3. Potencia de transmisión\n4. Frecuencia de transmisión\n5. Ayuda\n");
+			printf("0. Atras\n1. Frecuencia de transmisión en MHz - 915\n2. Velocidad de transmisión\n"
+					"3. PreambleLength\n4. Header_is_fixed_length\n5. Potencia de transmisión\n"
+					"6. Mostrar contenido del buffer interno del E22 en hexadecimal\n"
+					"7. Mostrar contenido del buffer interno del E22 en caracteres\n8. Ayuda\n");
 		break;
 		case menu_wifi_config:
 			printf("0. Atras\n1. SSD\n2. WiFi PASS\n3. Ayuda\n");
-		break;
-		case menu_firebase_config:
-			printf("0. Atras\n1. Link\n2. Restablecer\n3. Ayuda\n");
 		break;
 		case menu_time_config:
 			printf("0. Atras\n1. Fecha %s\n2. Hora %s\n3. Actualizar automáticamente\n4. Ayuda\n",
