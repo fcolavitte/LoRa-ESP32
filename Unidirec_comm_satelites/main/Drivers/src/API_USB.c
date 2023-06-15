@@ -72,8 +72,8 @@ void analizar_input_USB(void){
 	}
 	if(USB_input[0]>='0' && USB_input[0]<='9'){
 	    printf("Ingreso: %s\n", USB_input);
-		USB_input[1]='\0';
 		move_menu(USB_input[0]);
+		//USB_input[1]='\0';
 	}
 	USB_input[0]='\0';
 }
@@ -344,9 +344,11 @@ void move_menu(uint8_t numero_ingresado){
 				break;
 				case '1':
 					printf("Ingrese fecha:\n");
+					pos_menu_actual = menu_time_set_fecha;
 				break;
 				case '2':
 					printf("Ingrese hora:\n");
+					pos_menu_actual = menu_time_set_hora;
 				break;
 				case '3':
 					get_UTP();
@@ -363,6 +365,16 @@ void move_menu(uint8_t numero_ingresado){
 					display_menu();
 				break;
 			}
+		break;
+		case menu_time_set_fecha:
+			set_fecha_system_manualmente(USB_input);
+			pos_menu_actual = menu_time_config;
+			display_menu();
+		break;
+		case menu_time_set_hora:
+			set_hora_system_manualmente(USB_input);
+			pos_menu_actual = menu_time_config;
+			display_menu();
 		break;
 		default:
 			pos_menu_actual = menu_main;

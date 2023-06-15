@@ -41,6 +41,8 @@ struct timeval time_now;
  * @note	Para cargar el tiempo del sistema se tiene que usar get_UTP para que se cargue vía
  * 			web automáticamente desde servidor NTC o manualmente.
  * @note2	El tiempo en unix devuelto es para la zona horaria Argentina (-10800 (-3hs))
+ * 			Si se queire el unix absoluto para modificarlo y cargarlo de nuevo para modificar a mano fecha u hora -
+ * 			se tiene que sumar 10800 a lo devuelto por esta función
  */
 time_t get_time_unix_system (void) {
 	gettimeofday(&time_now, NULL);
@@ -95,7 +97,7 @@ esp_err_t client_event_UTP_handler(esp_http_client_event_handle_t evt) {
     	time_t unixtime = 0;
     	uint8_t string_unixtime[11] = {};
     	indexIn=(uint8_t*)strstr((char *)evt->data, "\"unixtime\"");
-    	if(indexIn>0){
+    	if(indexIn > (uint8_t*)0){
             indexIn+=11;
         	strncpy((char *)string_unixtime,(char *)indexIn,10);
         	string_unixtime[10]='\0';
@@ -136,34 +138,46 @@ uint8_t* get_string_hora(void){
 	return retvalue_string_hora;
 }
 
+
 void set_hora_system_manualmente(uint8_t *HH_MM_SS){
 	uint8_t string_aux [3]={};
 	string_aux [2] = '\0';
-	time_t unixtime_now = get_time_unix_system();
-	struct tm* struct_tm_now;
-	struct_tm_now = localtime(&unixtime_now);
+	time_t unixtime_now = get_time_unix_system()+10800;
+	struct tm* struct_tm_new;
+	struct_tm_new = localtime(&unixtime_now);
 	string_aux [0] = HH_MM_SS[0];
 	string_aux [1] = HH_MM_SS[1];
-	struct_tm_now->tm_hour = atoi(string_aux);
+	struct_tm_new->tm_hour = atoi((char*)string_aux);
 	string_aux [0] = HH_MM_SS[3];
 	string_aux [1] = HH_MM_SS[4];
-	struct_tm_now->tm_min = atoi(string_aux);
+	struct_tm_new->tm_min = atoi((char*)string_aux);
 	string_aux [0] = HH_MM_SS[6];
 	string_aux [1] = HH_MM_SS[7];
-	struct_tm_now->tm_sec = atoi(string_aux);
-	/*
-	 *
-	 *
-	 *
-	 * Pasar de struc tm a struct timeval y usar settimeday
-	 *
-	 *
-	 *
-	 *
-	 */
+	struct_tm_new->tm_sec = atoi((char*)string_aux);
+	time_t unixtime = mktime(struct_tm_new)+10800;
+	struct timeval start_time = { .tv_sec = unixtime, .tv_usec=0 };
+	settimeofday(&start_time, NULL);
 }
-void set_fecha_system_manualmente(uint8_t *DD_MM_AAAA){
 
+
+void set_fecha_system_manualmente(uint8_t *DD_MM_AAAA){
+	uint8_t string_aux [3]={};
+	string_aux [2] = '\0';
+	time_t unixtime_now = get_time_unix_system()+10800;
+	struct tm* struct_tm_new;
+	struct_tm_new = localtime(&unixtime_now);
+	string_aux [0] = DD_MM_AAAA[0];
+	string_aux [1] = DD_MM_AAAA[1];
+	struct_tm_new->tm_mday = atoi((char*)string_aux);
+	string_aux [0] = DD_MM_AAAA[3];
+	string_aux [1] = DD_MM_AAAA[4];
+	struct_tm_new->tm_mon = atoi((char*)string_aux)-1;
+	string_aux [0] = DD_MM_AAAA[8];
+	string_aux [1] = DD_MM_AAAA[9];
+	struct_tm_new->tm_year = atoi((char*)string_aux)+100;
+	time_t unixtime = mktime(struct_tm_new);
+	struct timeval start_time = { .tv_sec = unixtime, .tv_usec=0 };
+	settimeofday(&start_time, NULL);
 }
 
 

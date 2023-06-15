@@ -81,7 +81,21 @@ uint8_t* get_string_fecha(void);
  */
 uint8_t* get_string_hora(void);
 
+
+/**
+ * @brief	Permite actualizar la hora del sistema (del RTC) estableciendola manualmente
+ * @param	Recive una cadena de caracteres de la forma "HH_MM_SS", por ejemplo "16:30:05"
+ * @note	Actualiza la hora pero no modifica la fecha, para eso usar set_fecha_system_manualmente()
+ */
 void set_hora_system_manualmente(uint8_t *HH_MM_SS);
+
+
+/**
+ * @brief	Permite actualizar la fecha del sistema (del RTC) estableciendola manualmente
+ * @param	Recive una cadena de caracteres de la forma "DD_MM_AAAA", por ejemplo "14/06/2023"
+ * @note	Actualiza la fecha pero no modifica la hora, para eso usar set_hora_system_manualmente()
+ * @note	Respetar que el año esté compuesto de cuatro caracteres y no solo los últimos dos.
+ */
 void set_fecha_system_manualmente(uint8_t *DD_MM_AAAA);
 
 #endif /* MAIN_DRIVERS_LIB_API_TIME_H_ */
