@@ -10,6 +10,7 @@
 #include "API_Time.h"
 #include "API_USB.h"
 #include "API_E22.h"
+#include "API_WiFi.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <driver/uart.h>
@@ -165,7 +166,7 @@ void display_tree(void){
 	printf("       │   ├─ 2.1.4. header_fixed_length\n");
 	printf("       │   ├─ 2.1.5. Potencia de transmisión\n");
 	printf("       ├─ 2.2. WiFi Config\n");
-	printf("       │   ├─ 2.2.1. SSD\n");
+	printf("       │   ├─ 2.2.1. SSID\n");
 	printf("       │   └─ 2.2.2. WiFi PASS\n");
 	printf("       └─ 2.3. Fecha y Hora\n");
 	printf("            ├─ 2.3.1. Fecha\n");
@@ -334,10 +335,14 @@ void move_menu(uint8_t numero_ingresado){
 					display_menu();
 				break;
 				case '1':
-					printf("\nIngrese el SSD del Wi-Fi al que conectarse:\n");
+					printf("\nIngrese el SSID del Wi-Fi al que conectarse.\n");
+					printf("Debe haber un 1 antes del SSID para confirmar.\n");
+					pos_menu_actual = menu_wifi_SSID;
 				break;
 				case '2':
-					printf("\nIngrese la contraseña del Wi-Fi al que conectarse:\n");
+					printf("\nIngrese la contraseña del Wi-Fi al que conectarse.\n");
+					printf("Debe haber un 1 antes del PASS para confirmar.\n");
+					pos_menu_actual = menu_wifi_PASS;
 				break;
 				case '3':
 					display_help();
@@ -489,11 +494,19 @@ void move_menu(uint8_t numero_ingresado){
 			display_menu();
 		break;
 		/* Sub-menú config Wi-Fi */
-		case menu_wifi_SSD:
-
+		case menu_wifi_SSID:
+			if('1' == USB_input[0]){
+				WiFi_set_SSID(&(USB_input[1]));
+			}
+			pos_menu_actual = menu_wifi_config;
+			display_menu();
 		break;
 		case menu_wifi_PASS:
-
+			if('1' == USB_input[0]){
+				WiFi_set_PASS(&(USB_input[1]));
+			}
+			pos_menu_actual = menu_wifi_config;
+			display_menu();
 		break;
 		/* Sub-menú config time */
 		case menu_time_set_fecha:
@@ -668,7 +681,9 @@ void display_menu(void){
 			driver_E22_print_configuracion();
 		break;
 		case menu_wifi_config:
-			printf("0. Atras\n1. SSD\n2. WiFi PASS\n3. Ayuda\n");
+			printf("0. Atras\n");
+			printf("1. SSID        ■ %s\n", get_SSID_pointer());
+			printf("2. WiFi PASS\n3. Ayuda\n");
 		break;
 		case menu_time_config:
 			printf("0. Atras\n1. Fecha %s\n2. Hora %s\n3. Actualizar automáticamente\n4. Ayuda\n",

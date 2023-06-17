@@ -36,7 +36,7 @@ typedef enum{
 	menu_lora_header_PreambleLength	= 213,	/* información del encabezado de la comunicación en aire */
 	menu_lora_header_fixed_length	= 214,
 	menu_lora_power_output			= 215,
-	menu_wifi_SSD 	 = 221,
+	menu_wifi_SSID 	 = 221,
 	menu_wifi_PASS	 = 222,
 	menu_time_set_fecha	 = 231,
 	menu_time_set_hora	 = 232
