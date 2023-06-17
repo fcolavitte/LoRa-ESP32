@@ -73,7 +73,6 @@ void analizar_input_USB(void){
 	if(USB_input[0]>='0' && USB_input[0]<='9'){
 	    printf("Ingreso: %s\n", USB_input);
 		move_menu(USB_input[0]);
-		//USB_input[1]='\0';
 	}
 	USB_input[0]='\0';
 }
@@ -165,17 +164,18 @@ void display_tree(void){
 	printf("  │   └─ 1.5. Inicio de emisión\n");
 	printf("  └─ 2. Configuración\n");
 	printf("       ├─ 2.1. Módulo LoRa E22\n");
-	printf("       │   ├─ 2.1.1. Network y Address del E22\n");
+	printf("       │   ├─ 2.1.1. Frecuencia de la portadora\n");
 	printf("       │   ├─ 2.1.2. Velocidad de transmisión\n");
-	printf("       │   ├─ 2.1.3. Potencia de transmisión\n");
-	printf("       │   └─ 2.1.4. Frecuencia de transmisión\n");
+	printf("       │   ├─ 2.1.3. header_preambulo\n");
+	printf("       │   ├─ 2.1.4. header_fixed_length\n");
+	printf("       │   ├─ 2.1.5. Potencia de transmisión\n");
 	printf("       ├─ 2.2. WiFi Config\n");
 	printf("       │   ├─ 2.2.1. SSD\n");
 	printf("       │   └─ 2.2.2. WiFi PASS\n");
 	printf("       └─ 2.3. Fecha y Hora\n");
-	printf("            ├─ 2.4.1. Fecha\n");
-	printf("            ├─ 2.4.2. Hora\n");
-	printf("            └─ 2.4.3. Actualización automática\n");
+	printf("            ├─ 2.3.1. Fecha\n");
+	printf("            ├─ 2.3.2. Hora\n");
+	printf("            └─ 2.3.3. Actualización automática\n");
 }
 
 
@@ -278,19 +278,30 @@ void move_menu(uint8_t numero_ingresado){
 						display_menu();
 					break;
 					case '1':
-						printf("Ingrese la frecuencia de la portadora del E22 con la que se transmitirá:\n");
+						printf("\nIngrese la frecuencia de la portadora del E22 con la que se transmitirá.\n");
+						printf("La frecuencia debe estar en MHz, expresada en tres dígitos y ser un número entero.\n");
+						printf("La frecuencia debe estar entre 850 y 930 MHz.\n");
+						pos_menu_actual = menu_lora_frec_portadora;
 					break;
 					case '2':
-						printf("Ingrese la velocidad de transmisión por aire del E22:\n");
+						printf("\nIngrese la velocidad de transmisión por aire del E22.\n");
+						printf("\n>> No implementado en este prototipo.\n");
+						pos_menu_actual = menu_lora_baudrate_air;
 					break;
 					case '3':
-						printf("Ingrese el preambulo del mensaje LoRa:\n");
+						printf("\nIngrese el preambulo del mensaje LoRa.\n");
+						printf("\nEl número debe ser entero y de hasta 4 caracteres.\n");
+						pos_menu_actual = menu_lora_header_PreambleLength;
 					break;
 					case '4':
-						printf("El header del dataframe LoRa es de largo fijo? sí<1> o no <2>\n");
+						printf("\nEl header del dataframe LoRa es de largo fijo?\n");
+						printf("Opciones: 1 Sí | 2 No | 0 Cancelar\n");
+						pos_menu_actual = menu_lora_header_fixed_length;
 					break;
 					case '5':
-						printf("Ingrese la potencia de transmisión del E22:\n");
+						printf("\nIngrese la potencia de transmisión del E22.\n");
+						printf("\n>> No implementado en este prototipo.\n");
+						pos_menu_actual = menu_lora_power_output;
 					break;
 					case '6':
 						driver_E22_print_hexadecimal_ring_buffer();
@@ -343,11 +354,13 @@ void move_menu(uint8_t numero_ingresado){
 					display_menu();
 				break;
 				case '1':
-					printf("Ingrese fecha:\n");
+					printf("Ingrese la fecha.\n");
+					printf("El formato debe ser DD/MM/AAAA.\n");
 					pos_menu_actual = menu_time_set_fecha;
 				break;
 				case '2':
-					printf("Ingrese hora:\n");
+					printf("Ingrese la hora:\n");
+					printf("El formato debe ser HH:MM:SS.\n");
 					pos_menu_actual = menu_time_set_hora;
 				break;
 				case '3':
@@ -366,6 +379,49 @@ void move_menu(uint8_t numero_ingresado){
 				break;
 			}
 		break;
+		/* ---------- Inicio menues de tercer orden: ---------- */
+		/* -------- Esta sección no debe incluir printf ------- */
+		/* Sub-menú config LoRa */
+		case menu_lora_frec_portadora:
+			USB_input[3] = '\0';	/* Se deben ingresar 3 caracteres numéricos */
+			uint32_t frec_deseada_MHz = (uint32_t)atoi((char*)USB_input);
+			driver_E22_set_config_frec_deseada_MHz(frec_deseada_MHz);
+			pos_menu_actual = menu_lora_config;
+			display_menu();
+		break;
+		case menu_lora_baudrate_air:
+			pos_menu_actual = menu_lora_config;
+			display_menu();
+		break;
+		case menu_lora_header_PreambleLength:
+			USB_input[4] = '\0';	/* Se deben ingresar 4 caracteres numéricos */
+			uint16_t PreambleLength = (uint16_t)atoi((char*)USB_input);
+			driver_E22_set_config_PreambleLength(PreambleLength);
+			pos_menu_actual = menu_lora_config;
+			display_menu();
+		break;
+		case menu_lora_header_fixed_length:
+			if ('1' == USB_input[0]) {
+				driver_E22_set_config_Header_is_fixed_length(1);
+			}
+			if ('2' == USB_input[0]) {
+				driver_E22_set_config_Header_is_fixed_length(0);
+			}
+			pos_menu_actual = menu_lora_config;
+			display_menu();
+		break;
+		case menu_lora_power_output:
+			pos_menu_actual = menu_lora_config;
+			display_menu();
+		break;
+		/* Sub-menú config Wi-Fi */
+		case menu_wifi_SSD:
+
+		break;
+		case menu_wifi_PASS:
+
+		break;
+		/* Sub-menú config time */
 		case menu_time_set_fecha:
 			set_fecha_system_manualmente(USB_input);
 			pos_menu_actual = menu_time_config;
@@ -481,10 +537,12 @@ void display_menu(void){
 			printf("0. Atras\n1. LoRa Config\n2. WiFi Config\n3. Fecha y Hora\n4. Ayuda\n");
 		break;
 		case menu_lora_config:
-			printf("0. Atras\n1. Frecuencia de transmisión en MHz - 915\n2. Velocidad de transmisión\n"
+			printf("0. Atras\n1. Frecuencia de transmisión\n2. Velocidad de transmisión\n"
 					"3. PreambleLength\n4. Header_is_fixed_length\n5. Potencia de transmisión\n"
 					"6. Mostrar contenido del buffer interno del E22 en hexadecimal\n"
 					"7. Mostrar contenido del buffer interno del E22 en caracteres\n8. Ayuda\n");
+			/* Mostrar configuración actual */
+			driver_E22_print_configuracion();
 		break;
 		case menu_wifi_config:
 			printf("0. Atras\n1. SSD\n2. WiFi PASS\n3. Ayuda\n");

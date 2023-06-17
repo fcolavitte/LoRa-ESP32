@@ -134,10 +134,12 @@ void driver_E22_print_caracteres_ring_buffer(void);
 
 /*
  *	METODOS GETTER y SETTER para la configuración LoRa
- *
- *
- *
  */
+void driver_E22_set_config_PreambleLength(uint16_t PreambleLength);
+void driver_E22_set_config_Header_is_fixed_length(bool Header_is_fixed_length);
+void driver_E22_set_config_frec_deseada_MHz(uint32_t frec_deseada_MHz);
+
+
 #endif /* MAIN_DRIVERS_LIB_API_E22_H_ */
 
 /********************** end of file ******************************************/

@@ -254,10 +254,10 @@ void driver_E22_setear_pin_RX_entrada_aire(bool estado) {
 
 
 void driver_E22_print_configuracion(void) {
-	printf(">> Configuración del módulo E22:");
+	printf("\n>> Configuración actual del módulo E22:\n");
 	printf("        PreambleLength = %u\n", (unsigned int)config_E22.PreambleLength);
-	printf("        Header_is_fixed_length = %B\n", config_E22.Header_is_fixed_length);
-	printf("        frec_deseada_MHz = %04x\n", config_E22.frec_deseada_MHz);
+	printf("        Header_is_fixed_length = %s\n", (config_E22.Header_is_fixed_length ? "true" : "false"));
+	printf("        Frecuencia de la portadora = %03d MHz\n", config_E22.frec_deseada_MHz);
 }
 
 
@@ -340,6 +340,29 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 void driver_E22_recive_message(void) {
 }
 
+
+
+/*
+ * Setter y getters para la estructura de control del E22
+ */
+
+void driver_E22_set_config_PreambleLength(uint16_t PreambleLength){
+	if (PreambleLength > 0) {
+		config_E22.PreambleLength = PreambleLength;
+	}
+}
+
+
+void driver_E22_set_config_Header_is_fixed_length(bool Header_is_fixed_length){
+	config_E22.Header_is_fixed_length = Header_is_fixed_length;
+}
+
+
+void driver_E22_set_config_frec_deseada_MHz(uint32_t frec_deseada_MHz){
+	if ((frec_deseada_MHz > 850) && (frec_deseada_MHz < 930)) {
+		config_E22.frec_deseada_MHz = frec_deseada_MHz;
+	}
+}
 
 
 

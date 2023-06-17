@@ -23,9 +23,21 @@ typedef enum{
 	menu_main 		= 0,
 	menu_mensaje 	= 1,
 	menu_config_web = 2,
+	menu_mensaje_beacon 				= 11,	/* señal a emitir */
+	menu_mensaje_signal_mode 			= 12,	/* Modo a emitir */
+	menu_mensaje_periodo_emision		= 13,	/* Tiempo en segundos entre emisiones */
+	menu_mensaje_ventana_emision		= 14,	/* Ventana de emisión en minutos */
+	menu_mensaje_unixtime_start_emision = 15,	/* Inicio de emisión programada */
 	menu_lora_config 	 = 21,
 	menu_wifi_config 	 = 22,
 	menu_time_config 	 = 23,
+	menu_lora_frec_portadora		= 211,
+	menu_lora_baudrate_air			= 212,	/* Velocidad de transmisión en aire */
+	menu_lora_header_PreambleLength	= 213,	/* información del encabezado de la comunicación en aire */
+	menu_lora_header_fixed_length	= 214,
+	menu_lora_power_output			= 215,
+	menu_wifi_SSD 	 = 221,
+	menu_wifi_PASS	 = 222,
 	menu_time_set_fecha	 = 231,
 	menu_time_set_hora	 = 232
 }pos_menu_t;

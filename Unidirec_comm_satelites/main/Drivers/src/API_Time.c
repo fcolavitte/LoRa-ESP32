@@ -142,7 +142,7 @@ uint8_t* get_string_hora(void){
 void set_hora_system_manualmente(uint8_t *HH_MM_SS){
 	uint8_t string_aux [3]={};
 	string_aux [2] = '\0';
-	time_t unixtime_now = get_time_unix_system()+10800;
+	time_t unixtime_now = get_time_unix_system()/*+10800*/;
 	struct tm* struct_tm_new;
 	struct_tm_new = localtime(&unixtime_now);
 	string_aux [0] = HH_MM_SS[0];
@@ -163,7 +163,7 @@ void set_hora_system_manualmente(uint8_t *HH_MM_SS){
 void set_fecha_system_manualmente(uint8_t *DD_MM_AAAA){
 	uint8_t string_aux [3]={};
 	string_aux [2] = '\0';
-	time_t unixtime_now = get_time_unix_system()+10800;
+	time_t unixtime_now = get_time_unix_system()/*+10800*/;
 	struct tm* struct_tm_new;
 	struct_tm_new = localtime(&unixtime_now);
 	string_aux [0] = DD_MM_AAAA[0];
@@ -175,7 +175,7 @@ void set_fecha_system_manualmente(uint8_t *DD_MM_AAAA){
 	string_aux [0] = DD_MM_AAAA[8];
 	string_aux [1] = DD_MM_AAAA[9];
 	struct_tm_new->tm_year = atoi((char*)string_aux)+100;
-	time_t unixtime = mktime(struct_tm_new);
+	time_t unixtime = mktime(struct_tm_new)+10800;
 	struct timeval start_time = { .tv_sec = unixtime, .tv_usec=0 };
 	settimeofday(&start_time, NULL);
 }
