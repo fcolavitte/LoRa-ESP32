@@ -20,12 +20,12 @@
 
 /********************** internal data declaration ****************************/
 
-
 static uint8_t mac[6]; 	/* Variable donde se lee la MAC del WiFi*//*Por defecto la MAC es 30:C6:F7:29:BA:D8*/
 
 /********************** internal functions declaration ***********************/
 
 void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+void reconectar_WiFi(void);
 
 /********************** internal data definition *****************************/
 
@@ -51,11 +51,15 @@ void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_base, in
         case WIFI_EVENT_STA_DISCONNECTED:
             printf(">> Se perdión la conexión WiFi. Intentando reconexión... \n");
             esp_wifi_connect();
-            contador_WiFi_conexiones_fallidas++;
+            if (20 > contador_WiFi_conexiones_fallidas) {
+                contador_WiFi_conexiones_fallidas++;
+            } else {
+            	esp_wifi_disconnect();
+            	printf(">> No se pudo conectar Wi-Fi, ingrese $reconectar para volver a intentar.\n");
+            }
             vTaskDelay(500/ portTICK_PERIOD_MS);
-            if (16 <= contador_WiFi_conexiones_fallidas) {
+            if (10 == contador_WiFi_conexiones_fallidas) {
             	reconectar_WiFi();
-            	contador_WiFi_conexiones_fallidas = 0;
             }
             break;
         case IP_EVENT_STA_GOT_IP:
@@ -104,6 +108,10 @@ void print_MAC(void){
 }
 
 
+void reconectar_WiFi_manualmente(void) {
+	contador_WiFi_conexiones_fallidas=0;
+	reconectar_WiFi();
+}
 
 
 void reconectar_WiFi(void) {

@@ -40,8 +40,8 @@ void WiFi_set_SSID(uint8_t *new_SSID);
 void WiFi_set_PASS(uint8_t *new_SSID);
 void WiFi_get_SSID_and_PASS_from_nvs(void);
 uint8_t* get_SSID_pointer(void);
-void reconectar_WiFi(void);
 void verificar_WiFi_conection(void);
+void reconectar_WiFi_manualmente(void);
 
 #endif /* MAIN_DRIVERS_LIB_API_WIFI_H_ */
 

@@ -101,6 +101,17 @@ void read_command(void){
 		pos_menu_actual = menu_main;
 		display_menu();
 	}
+	else if(strstr((char *)(USB_input+1),"reset")!=0||strstr((char *)(USB_input+1),"reiniciar")!=0||strstr((char *)(USB_input+1),"restart")!=0){
+		printf(">> Comando $reiniar ingresado.\n");
+		printf(">> Reiniciando dispositivo...\n\n\n");
+        vTaskDelay(2000/ portTICK_PERIOD_MS);
+		/*Reinicio*/
+        esp_restart();
+	}else if(strstr((char *)(USB_input+1),"reconect")!=0||strstr((char *)(USB_input+1),"reconectar")!=0||strstr((char *)(USB_input+1),"conect")!=0){
+		printf(">> Comando $reconect ingresado.\n");
+		printf(">> Intentando reconexión de Wi-Fi.\n");
+        reconectar_WiFi_manualmente();
+	}
 	else {
 		printf(">> Comando no reconocido.\n");
 	}
