@@ -25,14 +25,9 @@ typedef enum{
 
 /********************** internal data declaration ****************************/
 
+pos_menu_t pos_menu_actual;
+
 /********************** internal functions declaration ***********************/
-
-
-
-/*		----- Funciones externas -----		*/
-extern void reset_config_dataBase(void);
-
-
 
 void analizar_input_USB(void);
 void read_command(void);
@@ -44,16 +39,16 @@ void move_menu(uint8_t numero_ingresado);
 void display_help(void);
 void display_comds_list(void);
 void display_help_main(void);
+void print_config_mensaje_programado (void);
 
 /********************** internal data definition *****************************/
 
 uint8_t USB_input[USB_INPUT_LENGHT+1] = {};
 int i_USB_input = 0;
 uint8_t pass_to_WiFi=0;
+static message_mode_config_t _message_mode_config;
 
 /********************** external data definition *****************************/
-
-extern pos_menu_t pos_menu_actual;
 
 /********************** internal functions definition ************************/
 
@@ -162,7 +157,7 @@ void display_tree(void){
 	printf("  │   ├─ 1.3. Periodo de emisión\n");
 	printf("  │   ├─ 1.4. Ventana\n");
 	printf("  │   └─ 1.5. Inicio de emisión\n");
-	printf("  └─ 2. Configuración\n");
+	printf("  └─ 2. Configuración del dispositivo\n");
 	printf("       ├─ 2.1. Módulo LoRa E22\n");
 	printf("       │   ├─ 2.1.1. Frecuencia de la portadora\n");
 	printf("       │   ├─ 2.1.2. Velocidad de transmisión\n");
@@ -215,19 +210,28 @@ void move_menu(uint8_t numero_ingresado){
 					display_menu();
 				break;
 				case '1':
-					printf("Ingrese señal beacon:\n");
+					printf("Ingrese señal beacon. Largo máximo de 40 caracteres.\n");
+					printf("Antes del mensaje se debe colocar el caracter 1 para confirmar.\n");
+					pos_menu_actual = menu_mensaje_beacon;
 				break;
 				case '2':
 					printf("Ingrese el modo de señal (puede estar manual <1>, repetido(beacon) <2> o programado <3>):\n");
+					pos_menu_actual = menu_mensaje_signal_mode;
 				break;
 				case '3':
-					printf("Ingrese el periodo de emisión [seg]:\n");
+					printf("Ingrese el periodo de emisión [seg].\n");
+					printf("El periodo debe estar entre 5 y 120 segundos.");
+					pos_menu_actual = menu_mensaje_periodo_emision;
 				break;
 				case '4':
-					printf("Ingrese el valor de la ventana [min]:\n");
+					printf("Ingrese el valor de la ventana [min].\n");
+					printf("La ventana debe estar entre 1 y 20 minutos.\n");
+					pos_menu_actual = menu_mensaje_ventana_emision;
 				break;
 				case '5':
-					printf("Ingrese la hora de inicio de emisión:\n");
+					printf("Ingrese la hora de inicio de emisión.\n");
+					printf("La hora debe estar en formato HH:MM:SS.");
+					pos_menu_actual = menu_mensaje_start_emision;
 				break;
 				case '6':
 					display_help();
@@ -379,8 +383,78 @@ void move_menu(uint8_t numero_ingresado){
 				break;
 			}
 		break;
-		/* ---------- Inicio menues de tercer orden: ---------- */
+		/* ---------- Inicio menues de último orden: ---------- */
 		/* -------- Esta sección no debe incluir printf ------- */
+		/* Sub-menú mensajes programados */
+			case menu_mensaje_beacon:
+				if ('1' == USB_input[0]) {
+					strcpy((char*)_message_mode_config.Mensaje, (char*)(&(USB_input[1])));
+				}
+				_message_mode_config.Mensaje[41] = '\0';
+				pos_menu_actual = menu_mensaje;
+				display_menu();
+			break;
+			case menu_mensaje_signal_mode:
+				if ('1' == USB_input[0]) {
+					_message_mode_config.message_mode = null;
+				}
+				if ('2' == USB_input[0]) {
+					_message_mode_config.message_mode = continuo;
+				}
+				if ('3' == USB_input[0]) {
+					_message_mode_config.message_mode = programado;
+				}
+				pos_menu_actual = menu_mensaje;
+				display_menu();
+			break;
+			case menu_mensaje_periodo_emision:
+				uint8_t string_periodo[4];
+				string_periodo[0] = USB_input[0];
+				string_periodo[1] = USB_input[1];
+				string_periodo[2] = USB_input[2];
+				string_periodo[3] = '\0';
+				uint32_t periodo = atoi((char*)string_periodo);
+				if (5 <= periodo && 120 >= periodo) {
+					_message_mode_config.Periodo_seconds = periodo;
+				}
+				pos_menu_actual = menu_mensaje;
+				display_menu();
+			break;
+			case menu_mensaje_ventana_emision:
+				uint8_t string_ventana[3];
+				string_ventana[0] = USB_input[0];
+				string_ventana[1] = USB_input[1];
+				string_ventana[2] = '\0';
+				uint32_t ventana = atoi((char*)string_ventana);
+				if (1 <= ventana && 20 >= ventana) {
+					_message_mode_config.Ventana_minutes = ventana;
+				}
+				pos_menu_actual = menu_mensaje;
+				display_menu();
+			break;
+			case menu_mensaje_start_emision:
+				/* Formato esperado: HH:MM:SS */
+				uint32_t segundos_to_start_mensaje = 0;
+				uint8_t string_aux[3];
+				string_aux[2] = '\0';
+				/* Horas */
+				string_aux [0] = USB_input[0];
+				string_aux [1] = USB_input[1];
+				segundos_to_start_mensaje += atoi((char*)string_aux)*3600;
+				/* Minutos */
+				string_aux [0] = USB_input[3];
+				string_aux [1] = USB_input[4];
+				segundos_to_start_mensaje += atoi((char*)string_aux)*60;
+				/* segundos*/
+				string_aux [0] = USB_input[6];
+				string_aux [1] = USB_input[7];
+				segundos_to_start_mensaje += atoi((char*)string_aux);
+				if (24*3600 > segundos_to_start_mensaje) {
+					_message_mode_config.Time_inicio_programado_segundos = segundos_to_start_mensaje;
+				}
+				pos_menu_actual = menu_mensaje;
+				display_menu();
+			break;
 		/* Sub-menú config LoRa */
 		case menu_lora_frec_portadora:
 			USB_input[3] = '\0';	/* Se deben ingresar 3 caracteres numéricos */
@@ -499,6 +573,33 @@ void display_comds_list(void){
 }
 
 
+/**
+ *	@brief	Muestra en pantalla la configuración actual de los mensajes programados
+ */
+void print_config_mensaje_programado (void) {
+	printf("\n>> Configuración actual de los mensajes programados:\n");
+	printf("    Mensaje a enviar: %s\n", _message_mode_config.Mensaje);
+	printf("    Modo de emisión: ");
+	if (null == _message_mode_config.message_mode) {
+		printf("Manual (modo envío configurado OFF)\n");
+	}
+	if (continuo == _message_mode_config.message_mode) {
+		printf("Continuo/Beacon\n");
+	}
+	if (programado == _message_mode_config.message_mode) {
+		printf("Programado\n");
+	}
+	printf("    Periodo de emisión: %d\n", _message_mode_config.Periodo_seconds);
+	printf("    Ventana de emisión: %d\n", _message_mode_config.Ventana_minutes);
+	printf("    Inicio de emisión: ");//, _message_mode_config.Time_inicio_programado_segundos);
+	uint32_t hora = _message_mode_config.Time_inicio_programado_segundos/3600;
+	printf("%02d:", hora);
+	uint32_t minutos = (_message_mode_config.Time_inicio_programado_segundos-hora*3600)/60;
+	printf("%02d:", minutos);
+	uint32_t segundos = _message_mode_config.Time_inicio_programado_segundos-hora*3600-minutos*60;
+	printf("%02d\n", segundos);
+}
+
 /********************** external functions definition ************************/
 
 uint8_t USB_get_input(void){
@@ -527,11 +628,13 @@ void display_menu(void){
 	printf("\n\n    ----  MENU  ----\n");
 	switch (pos_menu_actual){
 		case menu_main:
-			printf("1. Mensaje\n2. Configuración Web\n3. Ayuda\n");
+			printf("1. Mensaje\n2. Configuración del dispositivo\n3. Ayuda\n");
 		break;
 		case menu_mensaje:
-			printf("0. Atras\n1. Señal beacon\n2. Modo de emisión automática - OFF\n3. Periodo de emisión [segundos]\n");
-			printf("4. Ventana [minutos]\n5. Inicio de emisión - HH:MM:SS\n6. Ayuda\n");
+			printf("0. Atras\n1. Grabar mensaje\n2. Modo de emisión automática\n3. Periodo de emisión\n");
+			printf("4. Ventana de emisión\n5. Inicio de emisión\n6. Ayuda\n");
+			/* Mostrar configuración actual de los mensajes grabados */
+			print_config_mensaje_programado();
 		break;
 		case menu_config_web:
 			printf("0. Atras\n1. LoRa Config\n2. WiFi Config\n3. Fecha y Hora\n4. Ayuda\n");
@@ -541,7 +644,7 @@ void display_menu(void){
 					"3. PreambleLength\n4. Header_is_fixed_length\n5. Potencia de transmisión\n"
 					"6. Mostrar contenido del buffer interno del E22 en hexadecimal\n"
 					"7. Mostrar contenido del buffer interno del E22 en caracteres\n8. Ayuda\n");
-			/* Mostrar configuración actual */
+			/* Mostrar configuración actual del módulo E22 */
 			driver_E22_print_configuracion();
 		break;
 		case menu_wifi_config:
@@ -556,6 +659,27 @@ void display_menu(void){
 			printf("1. Mensaje\n2. Configuración Web\n3. Ayuda\n");
 		break;
 	}
+}
+
+
+void get_estruct_message_mode_config(message_mode_config_t * estructura_donde_guardar_la_info) {
+	estructura_donde_guardar_la_info->Periodo_seconds = _message_mode_config.Periodo_seconds;
+	estructura_donde_guardar_la_info->Time_inicio_programado_segundos = _message_mode_config.Time_inicio_programado_segundos;
+	estructura_donde_guardar_la_info->Ventana_minutes = _message_mode_config.Ventana_minutes;
+	estructura_donde_guardar_la_info->message_mode = _message_mode_config.message_mode;
+	strcpy((char*)estructura_donde_guardar_la_info->Mensaje, (char*)_message_mode_config.Mensaje);
+}
+
+
+void set_posicion_menu_actual_main (void) {
+	pos_menu_actual = menu_main;
+}
+
+void set_estructura_message_mode_config(message_mode_config_t * estructura_con_la_info) {
+	_message_mode_config.Periodo_seconds = estructura_con_la_info->Periodo_seconds;
+	_message_mode_config.Time_inicio_programado_segundos = estructura_con_la_info->Time_inicio_programado_segundos;
+	_message_mode_config.Ventana_minutes = estructura_con_la_info->Ventana_minutes;
+	strcpy((char*)_message_mode_config.Mensaje, (char*)estructura_con_la_info->Mensaje);
 }
 
 /********************** end of file ******************************************/

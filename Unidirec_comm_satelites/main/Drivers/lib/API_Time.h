@@ -14,7 +14,7 @@
 
 /********************** macros and definitions *******************************/
 
-#define MAX_DELAY 120	//2 minutos. Variable en segundos
+#define MAX_DELAY 121	//2 minutos. Variable en segundos
 
 /********************** typedef **********************************************/
 
@@ -97,6 +97,17 @@ void set_hora_system_manualmente(uint8_t *HH_MM_SS);
  * @note	Respetar que el año esté compuesto de cuatro caracteres y no solo los últimos dos.
  */
 void set_fecha_system_manualmente(uint8_t *DD_MM_AAAA);
+
+
+/**
+ * @brief	Devuelve el tiempo UTP en unix (segundos desde 1900) del sistema.
+ * @note	Para cargar el tiempo del sistema se tiene que usar get_UTP para que se cargue vía
+ * 			web automáticamente desde servidor NTC o manualmente.
+ * @note2	El tiempo en unix devuelto es para la zona horaria Argentina (-10800 (-3hs))
+ * 			Si se queire el unix absoluto para modificarlo y cargarlo de nuevo para modificar a mano fecha u hora -
+ * 			se tiene que sumar 10800 a lo devuelto por esta función
+ */
+time_t get_time_unix_system (void);
 
 #endif /* MAIN_DRIVERS_LIB_API_TIME_H_ */
 

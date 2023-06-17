@@ -29,27 +29,11 @@ uint8_t retvalue_string_hora[9]={};
 
 /********************** internal data definition *****************************/
 
-uint32_t segundos_actuales=0;
 struct timeval time_now;
 
 /********************** external data definition *****************************/
 
 /********************** internal functions definition ************************/
-
-/**
- * @brief	Devuelve el tiempo UTP en unix (segundos desde 1900) del sistema.
- * @note	Para cargar el tiempo del sistema se tiene que usar get_UTP para que se cargue vía
- * 			web automáticamente desde servidor NTC o manualmente.
- * @note2	El tiempo en unix devuelto es para la zona horaria Argentina (-10800 (-3hs))
- * 			Si se queire el unix absoluto para modificarlo y cargarlo de nuevo para modificar a mano fecha u hora -
- * 			se tiene que sumar 10800 a lo devuelto por esta función
- */
-time_t get_time_unix_system (void) {
-	gettimeofday(&time_now, NULL);
-	time_t raw_offset = -10800;
-	time_t unixtime_now = time_now.tv_sec + raw_offset;
-	return unixtime_now;
-}
 
 /********************** external functions definition ************************/
 
@@ -205,29 +189,35 @@ void UTP_init(void){
 }
 
 
+time_t get_time_unix_system (void) {
+	gettimeofday(&time_now, NULL);
+	time_t raw_offset = -10800;
+	time_t unixtime_now = time_now.tv_sec + raw_offset;
+	return unixtime_now;
+}
+
 /*********** Retardos no bloqueantes ************/
 
 void delayInit(delay_t * delay, uint32_t duration) {
 	if(delay != 0 && duration > 0 && duration < MAX_DELAY){		/* Comprobación de parámetros de entrada */
-		delay->startTime = segundos_actuales;
+		delay->startTime = get_time_unix_system ();
 		delay->duration = duration;
 		delay->running = 0;	/* false */
 	} else {
 		/* Control de error */
 	}
-
 }
 
 
 bool_t delayRead(delay_t * delay) {
 	if(delay!=0) {	/* Comprobación de parámetro de entrada */
-		if(delay->running==0) {
-			if(segundos_actuales - delay->startTime > delay->duration){
+		if(0 == delay->running) {
+			if(get_time_unix_system () - delay->startTime > delay->duration){
 				delay->running=1;//true
 			}
 		} else {
-			delay->running=0;
-			delay->startTime=segundos_actuales;
+			delay->running = 0;
+			delay->startTime = get_time_unix_system ();
 		}
 		return delay->running;
 	} else {
