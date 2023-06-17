@@ -331,7 +331,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
         if (0 == driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
         	driver_E22_setear_pin_TX_salida_potencia(LOW);
         	i = 10;
-            printf(">> Mensaje enviado\n");
+            printf("\n>> Mensaje enviado (E22).\n");
         }
     }
 }

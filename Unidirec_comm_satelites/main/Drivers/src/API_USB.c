@@ -210,27 +210,27 @@ void move_menu(uint8_t numero_ingresado){
 					display_menu();
 				break;
 				case '1':
-					printf("Ingrese señal beacon. Largo máximo de 40 caracteres.\n");
+					printf("\nIngrese señal beacon. Largo máximo de 40 caracteres.\n");
 					printf("Antes del mensaje se debe colocar el caracter 1 para confirmar.\n");
 					pos_menu_actual = menu_mensaje_beacon;
 				break;
 				case '2':
-					printf("Ingrese el modo de señal (puede estar manual <1>, repetido(beacon) <2> o programado <3>):\n");
+					printf("\nIngrese el modo de señal (puede estar manual <1>, repetido(beacon) <2> o programado <3>):\n");
 					pos_menu_actual = menu_mensaje_signal_mode;
 				break;
 				case '3':
-					printf("Ingrese el periodo de emisión [seg].\n");
-					printf("El periodo debe estar entre 5 y 120 segundos.");
+					printf("\nIngrese el periodo de emisión [seg].\n");
+					printf("El periodo debe estar entre 5 y 120 segundos.\n");
 					pos_menu_actual = menu_mensaje_periodo_emision;
 				break;
 				case '4':
-					printf("Ingrese el valor de la ventana [min].\n");
+					printf("\nIngrese el valor de la ventana [min].\n");
 					printf("La ventana debe estar entre 1 y 20 minutos.\n");
 					pos_menu_actual = menu_mensaje_ventana_emision;
 				break;
 				case '5':
-					printf("Ingrese la hora de inicio de emisión.\n");
-					printf("La hora debe estar en formato HH:MM:SS.");
+					printf("\nIngrese la hora de inicio de emisión.\n");
+					printf("La hora debe estar en formato HH:MM:SS.\n");
 					pos_menu_actual = menu_mensaje_start_emision;
 				break;
 				case '6':
@@ -334,10 +334,10 @@ void move_menu(uint8_t numero_ingresado){
 					display_menu();
 				break;
 				case '1':
-					printf("Ingrese el SSD del Wi-Fi al que conectarse:\n");
+					printf("\nIngrese el SSD del Wi-Fi al que conectarse:\n");
 				break;
 				case '2':
-					printf("Ingrese la contraseña del Wi-Fi al que conectarse:\n");
+					printf("\nIngrese la contraseña del Wi-Fi al que conectarse:\n");
 				break;
 				case '3':
 					display_help();
@@ -631,10 +631,30 @@ void display_menu(void){
 			printf("1. Mensaje\n2. Configuración del dispositivo\n3. Ayuda\n");
 		break;
 		case menu_mensaje:
-			printf("0. Atras\n1. Grabar mensaje\n2. Modo de emisión automática\n3. Periodo de emisión\n");
-			printf("4. Ventana de emisión\n5. Inicio de emisión\n6. Ayuda\n");
+			printf("0. Atras                        Valores actuales:\n");
+			printf("1. Grabar mensaje               ■ %s\n", _message_mode_config.Mensaje);
+			printf("2. Modo de emisión automática   ■ ");
+			if (null == _message_mode_config.message_mode) {
+				printf("Manual (modo envío configurado OFF)\n");
+			}
+			if (continuo == _message_mode_config.message_mode) {
+				printf("Continuo/Beacon\n");
+			}
+			if (programado == _message_mode_config.message_mode) {
+				printf("Programado\n");
+			}
+			printf("3. Periodo de emisión           ■ %d\n", _message_mode_config.Periodo_seconds);
+			printf("4. Ventana de emisión           ■ %d\n",_message_mode_config.Ventana_minutes);
+			printf("5. Inicio de emisión            ■ ");
+			uint32_t hora = _message_mode_config.Time_inicio_programado_segundos/3600;
+			printf("%02d:", hora);
+			uint32_t minutos = (_message_mode_config.Time_inicio_programado_segundos-hora*3600)/60;
+			printf("%02d:", minutos);
+			uint32_t segundos = _message_mode_config.Time_inicio_programado_segundos-hora*3600-minutos*60;
+			printf("%02d\n", segundos);
+			printf("6. Ayuda\n");
 			/* Mostrar configuración actual de los mensajes grabados */
-			print_config_mensaje_programado();
+			/* print_config_mensaje_programado(); */
 		break;
 		case menu_config_web:
 			printf("0. Atras\n1. LoRa Config\n2. WiFi Config\n3. Fecha y Hora\n4. Ayuda\n");
@@ -679,6 +699,7 @@ void set_estructura_message_mode_config(message_mode_config_t * estructura_con_l
 	_message_mode_config.Periodo_seconds = estructura_con_la_info->Periodo_seconds;
 	_message_mode_config.Time_inicio_programado_segundos = estructura_con_la_info->Time_inicio_programado_segundos;
 	_message_mode_config.Ventana_minutes = estructura_con_la_info->Ventana_minutes;
+	_message_mode_config.message_mode = estructura_con_la_info->message_mode;
 	strcpy((char*)_message_mode_config.Mensaje, (char*)estructura_con_la_info->Mensaje);
 }
 

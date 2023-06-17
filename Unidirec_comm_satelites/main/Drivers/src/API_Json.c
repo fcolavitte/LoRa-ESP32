@@ -16,7 +16,7 @@
 
 /********************** internal data declaration ****************************/
 
-Json_struct_t Json_from_DB;
+Json_struct_t _Json_from_DB;
 
 /********************** internal functions declaration ***********************/
 
@@ -77,16 +77,18 @@ uint8_t get_Json_value(uint8_t *Json, uint8_t *key, uint8_t *value_return, uint8
 /********************** external functions definition ************************/
 
 void iniciar_Json_from_DB(void){
-	Json_from_DB.Mensaje.key				= (uint8_t*)"Enviar";
-	strcpy((char*)Json_from_DB.Mensaje.value,"Mensaje de ejemplo");
-	Json_from_DB.Time_inicio_programado.key					= (uint8_t*)"Horario";
-	strcpy((char*)Json_from_DB.Time_inicio_programado.value,"10-00");
-	Json_from_DB.Periodo_seconds.key 	= (uint8_t*)"Periodo";
-	Json_from_DB.Periodo_seconds.value	= 60;
-	Json_from_DB.Ventana_minutes.key 	= (uint8_t*)"Ventana";
-	Json_from_DB.Ventana_minutes.value 	= 30;
-	Json_from_DB.Pass_to_WiFi.key 	= (uint8_t*)"Pasar_a_modo_WiFi";
-	Json_from_DB.Pass_to_WiFi.value = 0;
+	_Json_from_DB.Mensaje.key				= (uint8_t*)"Enviar";
+	strcpy((char*)_Json_from_DB.Mensaje.value,"Mensaje de ejemplo");
+	_Json_from_DB.Time_inicio_programado.key					= (uint8_t*)"Horario";
+	strcpy((char*)_Json_from_DB.Time_inicio_programado.value,"10-00");
+	_Json_from_DB.Periodo_seconds.key	= (uint8_t*)"Periodo";
+	_Json_from_DB.Periodo_seconds.value	= 60;
+	_Json_from_DB.Ventana_minutes.key	= (uint8_t*)"Ventana";
+	_Json_from_DB.Ventana_minutes.value	= 30;
+	_Json_from_DB.Pass_to_WiFi.key		= (uint8_t*)"Pasar_a_modo_WiFi";
+	_Json_from_DB.Pass_to_WiFi.value	= 0;
+	_Json_from_DB.Message_mode.key		= (uint8_t*)"Modo_mensaje";
+	_Json_from_DB.Message_mode.value	= 0;
 }
 
 
@@ -95,34 +97,47 @@ uint8_t analizar_json(Json_struct_t *Json_struct, uint8_t *Json_String){
 		printf(">>ERROR>analizar_json()>Json_struct==0||Json_String==0\n");
 		return 0;
 	}
-	Json_from_DB.Mensaje.key				= (uint8_t*)"Enviar";
-	Json_from_DB.Time_inicio_programado.key	= (uint8_t*)"Horario";
-	Json_from_DB.Periodo_seconds.key 	= (uint8_t*)"Periodo";
-	Json_from_DB.Ventana_minutes.key 	= (uint8_t*)"Ventana";
-	Json_from_DB.Pass_to_WiFi.key 		= (uint8_t*)"Pasar_a_modo_WiFi";
+	Json_struct->Mensaje.key					= (uint8_t*)"Enviar";
+	Json_struct->Time_inicio_programado.key		= (uint8_t*)"Horario";
+	Json_struct->Periodo_seconds.key 			= (uint8_t*)"Periodo";
+	Json_struct->Ventana_minutes.key 			= (uint8_t*)"Ventana";
+	Json_struct->Pass_to_WiFi.key 				= (uint8_t*)"Pasar_a_modo_WiFi";
+	Json_struct->Message_mode.key 				= (uint8_t*)"Modo_mensaje";
+
 	/* Variables locales */
 	uint8_t int_in_String[INT_IN_STRING_SIZE];
 	uint8_t int_control_error = 0;
+
 	/* Conversión de los Json_String_element_t */
 	int_control_error += get_Json_value(Json_String,Json_struct->Mensaje.key,
 			Json_struct->Mensaje.value,
 			VALUE_STRING_MAX_LENGHT);
 	int_control_error += get_Json_value(Json_String,Json_struct->Time_inicio_programado.key,
 			Json_struct->Time_inicio_programado.value,VALUE_STRING_MAX_LENGHT);
+
 	/* Conversión de los Json_uint_element_t */
 	/* Tomar valor uint32_t de Periodo_seconds */
 	int_control_error += get_Json_value(Json_String,Json_struct->Periodo_seconds.key,int_in_String,INT_IN_STRING_SIZE);
 	int_in_String[INT_IN_STRING_SIZE-1]='\0';
 	Json_struct->Periodo_seconds.value = (uint32_t)atoi((char *)int_in_String);
+
 	/* Tomar valor uint32_t de Ventana_minutes */
 	int_control_error += get_Json_value(Json_String,Json_struct->Ventana_minutes.key,int_in_String,INT_IN_STRING_SIZE);
 	int_in_String[INT_IN_STRING_SIZE-1]='\0';
 	Json_struct->Ventana_minutes.value = (uint32_t)atoi((char *)int_in_String);
+
 	/* Tomar valor uint32_t de Pass_to_WiFi */
 	int_control_error += get_Json_value(Json_String,Json_struct->Pass_to_WiFi.key,int_in_String,INT_IN_STRING_SIZE);
 	int_in_String[INT_IN_STRING_SIZE-1]='\0';
 	Json_struct->Pass_to_WiFi.value = (uint32_t)atoi((char *)int_in_String);
-	if(int_control_error!=CANT_ELEMENTOS_DE_JSON_STRUCT_T){	/* get_Json_value devuelve 1 si la conversión fué correcta */
+
+	/* Tomar valor uint32_t de Modo_mensaje */
+	int_control_error += get_Json_value(Json_String,Json_struct->Message_mode.key,int_in_String,INT_IN_STRING_SIZE);
+	int_in_String[INT_IN_STRING_SIZE-1]='\0';
+	Json_struct->Message_mode.value = (uint32_t)atoi((char *)int_in_String);
+
+	/* get_Json_value devuelve 1 si la conversión fué correcta */
+	if(int_control_error!=CANT_ELEMENTOS_DE_JSON_STRUCT_T){
 		printf(">>ERROR>analizar_json()>int_control_error!=CANT_ELEMENTOS_DE_JSON_STRUCT_T\n");
 		return 0;
 	}
@@ -133,6 +148,7 @@ uint8_t analizar_json(Json_struct_t *Json_struct, uint8_t *Json_String){
 		printf(">>ERROR>analizar_json()>Json_struct->Time_inicio_programado.value==0\n");
 		return 0;
 	}
+	Json_struct->Mensaje.value[VALUE_STRING_MAX_LENGHT-1] = '\0';
 	return 1;
 }
 

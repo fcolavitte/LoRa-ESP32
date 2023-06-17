@@ -17,7 +17,7 @@
 #define KEY_STRING_MAX_LENGHT 	(uint32_t)8 		/*sizeof de "Mensaje" incluyendo el '\0'			*/
 #define KEY_UINT_MAX_LENGHT 	(uint32_t)18 		/*sizeof de "Pasar_a_modo_WiFi" incluyendo el '\0'	*/
 #define INT_IN_STRING_SIZE		(uint8_t)20			/*Tamaño máximo del string para pasar a entero		*/
-#define CANT_ELEMENTOS_DE_JSON_STRUCT_T		(uint32_t)5
+#define CANT_ELEMENTOS_DE_JSON_STRUCT_T		(uint32_t)6
 #define VALUE_STRING_MAX_LENGHT (uint8_t)30
 
 /********************** typedef **********************************************/
@@ -39,6 +39,7 @@ typedef struct{
 		Json_uint_element_t   Periodo_seconds;
 		Json_uint_element_t   Ventana_minutes;
 		Json_uint_element_t   Pass_to_WiFi;
+		Json_uint_element_t   Message_mode;
 	};
 } Json_struct_t;
 

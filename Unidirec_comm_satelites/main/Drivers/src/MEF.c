@@ -44,15 +44,46 @@ delay_t delay_entre_envio_de_mensajes;
 
 /********************** external data definition *****************************/
 
-extern uint8_t pass_to_WiFi;
-
 /********************** internal functions definition ************************/
 
 /**
  *	@brief	Actualizar MEF referida a la emisión de mensajes programados
  */
 void update_MEF_message(void) {
-	get_estruct_message_mode_config(&message_mode_config); //No está funcionando
+	if (USB_mode == MEF_mode) {
+		/* Tomar datos a enviar desde USB */
+		get_estruct_message_mode_config(&message_mode_config);
+	} else {
+		/* Tomar datos desde la esctructura Wi-Fi y guardar en la estructura USB */
+		message_mode_config.Periodo_seconds = get_firebase_Periodo_seconds();
+		message_mode_config.Ventana_minutes = get_firebase_Ventana_minutes();
+		if (2 == get_firebase_message_mode()){
+			message_mode_config.message_mode = continuo;
+		} else if (3 == get_firebase_message_mode()) {
+			message_mode_config.message_mode = programado;
+		} else {
+			message_mode_config.message_mode = null;
+		}
+		uint8_t string_time_programado[5];
+		strncpy((char*)string_time_programado, (char*)get_firebase_Time_inicio_programado(), 5);
+		uint8_t aux_to_get_time[3];
+		uint32_t time_inicio_programado_segundos = 0;
+		aux_to_get_time[2] = '\0';
+		aux_to_get_time[0] = string_time_programado[0];
+		aux_to_get_time[1] = string_time_programado[1];
+		time_inicio_programado_segundos += atoi((char*)aux_to_get_time)*3600;
+		aux_to_get_time[0] = string_time_programado[3];
+		aux_to_get_time[1] = string_time_programado[4];
+		time_inicio_programado_segundos += atoi((char*)aux_to_get_time)*60;
+		message_mode_config.Time_inicio_programado_segundos = time_inicio_programado_segundos;
+		strcpy((char*)message_mode_config.Mensaje, (char*)get_firebase_message());
+
+		/* Setear estructura USB conforme a la Wi-Fi */
+		set_estructura_message_mode_config(&message_mode_config);
+	}
+
+
+	/* Inicio actualización de MEF_message */
 	if (continuo == message_mode_config.message_mode) {
 		/* Modo Beacon */
 		delayWrite(&delay_entre_envio_de_mensajes, message_mode_config.Periodo_seconds);
@@ -95,9 +126,9 @@ void update_MEF_message(void) {
 void update_MEF_USB_WiFi(void) {
 	if(USB_get_input()){	/* Si se recibe algo por USB se debe pasar a USB_mode */
 		MEF_mode = USB_mode;
-		if(pass_to_WiFi==1){
+		if(get_firebase_pass_to_WiFi()){
 			MEF_mode = WiFi_mode;
-			pass_to_WiFi = 0;
+			clear_firebase_pass_to_WiFi();
 		}
 	}
 	if(delayRead(&delay_get_json)){

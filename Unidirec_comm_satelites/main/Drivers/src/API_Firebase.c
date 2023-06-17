@@ -29,7 +29,7 @@ uint8_t Json_String[140];
 
 /********************** external data definition *****************************/
 
-extern Json_struct_t Json_from_DB;
+Json_struct_t Json_from_DB;
 
 /********************** internal functions definition ************************/
 
@@ -92,6 +92,7 @@ void print_firebase_dates(void){
 	printf("	>> Periodo: %d\n",Json_from_DB.Periodo_seconds.value);
 	printf("	>> Ventana: %d\n",Json_from_DB.Ventana_minutes.value);
 	printf("	>> Pass_to_WiFi: %d\n",Json_from_DB.Pass_to_WiFi.value);
+	printf("	>> Modo de emisión del mensaje: %d\n",Json_from_DB.Message_mode.value);
 }
 
 
@@ -109,8 +110,10 @@ void clear_firebase_pass_to_WiFi(void){
     esp_http_client_set_header(client, "Content-Type", "application/json");
     esp_http_client_perform(client);
     esp_http_client_cleanup(client);
+    Json_from_DB.Pass_to_WiFi.value = 0;
 }
 
+/* Método getter de la estructura JSON */
 
 uint8_t *get_firebase_message(void){
 	return Json_from_DB.Mensaje.value;
@@ -126,6 +129,9 @@ uint32_t get_firebase_Ventana_minutes(void){
 }
 uint8_t get_firebase_pass_to_WiFi(void){
 	return (uint8_t)Json_from_DB.Pass_to_WiFi.value;
+}
+uint8_t  get_firebase_message_mode(void){
+	return (uint8_t)Json_from_DB.Message_mode.value;
 }
 
 /********************** end of file ******************************************/

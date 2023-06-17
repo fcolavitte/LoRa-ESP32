@@ -24,9 +24,9 @@
 /********************** macros and definitions *******************************/
 
 #define PORT 443
-//#define URL "https://prueba-iot-satellogic-default-rtdb.firebaseio.com/.json"
-#define USERNAME ""		//credenciales de acceso a Firebase, no se necesitan porque está desactivada la autentificacion de usuarios.
-#define PASSWORD ""		//credenciales de acceso a Firebase, no se necesitan porque está desactivada la autentificacion de usuarios.
+/*#define URL "https://prueba-iot-satellogic-default-rtdb.firebaseio.com/.json"*/
+#define USERNAME ""		/*credenciales de acceso a Firebase, no se necesitan porque está desactivada la autentificacion de usuarios.*/
+#define PASSWORD ""		/*credenciales de acceso a Firebase, no se necesitan porque está desactivada la autentificacion de usuarios.*/
 
 /********************** typedef **********************************************/
 
@@ -57,6 +57,7 @@ uint8_t *get_firebase_Time_inicio_programado(void);
 uint32_t get_firebase_Periodo_seconds(void);
 uint32_t get_firebase_Ventana_minutes(void);
 uint8_t  get_firebase_pass_to_WiFi(void);
+uint8_t  get_firebase_message_mode(void);
 
 
 #endif /* MAIN_DRIVERS_LIB_API_FIREBASE_H_ */
