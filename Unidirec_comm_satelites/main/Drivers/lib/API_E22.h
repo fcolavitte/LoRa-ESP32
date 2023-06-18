@@ -128,7 +128,7 @@ void driver_E22_SetRx_poner_modulo_en_modo_rx(uint32_t timeout);
 
 /**
  *	@brief	Configura el dataframe de la comunicación LoRa
- *	@note	El parámetro más importante es "bytes_a_enviar"
+ *	@note	El parámetro más importante es "bytes_a_enviar". En modo Rx define la cantidad máxima de bytes a recibir por mensaje.
  */
 void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength, bool Header_is_fixed_length, uint8_t bytes_a_enviar);
 

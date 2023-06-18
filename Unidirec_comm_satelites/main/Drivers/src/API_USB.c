@@ -111,6 +111,11 @@ void read_command(void){
 		printf(">> Comando $reconect ingresado.\n");
 		printf(">> Intentando reconexión de Wi-Fi.\n");
         reconectar_WiFi_manualmente();
+	}else if(strstr((char *)(USB_input+1),"rx")!=0||strstr((char *)(USB_input+1),"rec")!=0||strstr((char *)(USB_input+1),"escuchar")!=0){
+		printf(">> Comando $rx ingresado.\n");
+		printf(">> Se pasa el módulo E22 a modo Rx continuo. Recibe constantemente por aire y lo guarda en su buffer interno.\n");
+		printf(">> Para detener el modo Rx continuo se debe forzar el pasaje a IDLE o Tx o reiniciar el módulo E22.\n");
+		driver_E22_recive_message();
 	}
 	else {
 		printf(">> Comando no reconocido.\n");
@@ -593,6 +598,13 @@ void display_comds_list(void){
 	printf("		Cualquier interacción por USB realizada despues de este comando regresa el modo a USB.\n\n");
 	printf("	$menu y $main:\n");
 	printf("		Muestra el menu principal.\n");
+	printf("	$reset y $reiniciar:\n");
+	printf("		Reinicia el dispositivo.\n");
+	printf("	$reconectar $reconect y $conectar:\n");
+	printf("		Fuerza reconexión a Wi-Fi con las nuevas credenciales.\n");
+	printf("	$rx $rec y $escuchar:\n");
+	printf("		Pone al módulo E22 en modo Rx continuo.\n");
+	printf("		El módulo guarda en el buffer interno todo lo que recibe de forma constante.\n");
 	printf("\n----------------------------------------------------------------------------------------\n\n");
 }
 

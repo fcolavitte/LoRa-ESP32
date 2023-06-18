@@ -338,6 +338,33 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 
 
 void driver_E22_recive_message(void) {
+	/* Poner pin de not_reset en alto */
+	driver_HAL_GPIO_write(GPIO_E22_NRST, HIGH);
+    vTaskDelay(1);
+
+	/* Setear modo de transmisión como LoRa */
+	bool transmitir_en_modo_LoRa = 1;
+	driver_E22_SetPacketType(transmitir_en_modo_LoRa);
+    vTaskDelay(1);
+
+	/* Establecer que Rx y Tx en aire comiencen desde el byte 0 del buffer circular interno del E22 */
+	driver_E22_SetBufferBaseAddress(0, 0);
+    vTaskDelay(1);
+
+	/* Avisar al E22 el largo de bytes a enviar */
+	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(config_E22.PreambleLength, config_E22.Header_is_fixed_length, 120);
+    vTaskDelay(1);
+
+	/* Setear frecuencia a utilizar para envío de datos */
+	driver_E22_SetRfFrequency(config_E22.frec_deseada_MHz);
+    vTaskDelay(1);
+
+	/* Pasar módulo a modo Tx con timeout=0 */
+    driver_E22_setear_pin_RX_entrada_aire(HIGH);
+	vTaskDelay(1);
+	/* Timeout 0xFFFFFF hace que esté en modo recepción continua hasta que se cambia el
+	 * modo de recepción (con otro timeout) o hasta que se fuerza por opcode a it a idle o tx*/
+	driver_E22_SetRx_poner_modulo_en_modo_rx(0xFFFFFF);
 }
 
 
