@@ -40,8 +40,8 @@
 /*** GPIO ***/
 #define GPIO_E22_BUSY 21
 #define GPIO_E22_NRST  22
-#define GPIO_TX_ENABLE -1
-#define GPIO_RX_ENABLE -1
+#define GPIO_TX_ENABLE 26
+#define GPIO_RX_ENABLE 25
 
 #define MAX_SIZE_SPI_BUFFERS	32
 
