@@ -429,6 +429,7 @@ void move_menu(uint8_t numero_ingresado){
 				display_menu();
 			break;
 			case menu_mensaje_periodo_emision:
+				;
 				uint8_t string_periodo[4];
 				string_periodo[0] = USB_input[0];
 				string_periodo[1] = USB_input[1];
@@ -442,6 +443,7 @@ void move_menu(uint8_t numero_ingresado){
 				display_menu();
 			break;
 			case menu_mensaje_ventana_emision:
+				;
 				uint8_t string_ventana[3];
 				string_ventana[0] = USB_input[0];
 				string_ventana[1] = USB_input[1];
@@ -455,6 +457,7 @@ void move_menu(uint8_t numero_ingresado){
 			break;
 			case menu_mensaje_start_emision:
 				/* Formato esperado: HH:MM:SS */
+				;
 				uint32_t segundos_to_start_mensaje = 0;
 				uint8_t string_aux[3];
 				string_aux[2] = '\0';
