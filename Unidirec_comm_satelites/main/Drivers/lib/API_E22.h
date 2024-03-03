@@ -33,6 +33,7 @@
 #define OPCODE_SET_TX_MODE			(uint8_t)0x83
 #define OPCODE_SET_RX_MODE			(uint8_t)0x82
 #define OPCODE_SetPacketType		(uint8_t)0x8A	/* Cambia entre emisión LoRa y FSK - Usar antes que SetPacketParams		*/
+#define OPCODE_SetModulationParams	(uint8_t)0x8B
 #define OPCODE_SetPacketParams		(uint8_t)0x8C	/* Contiene un parámetro que define la cantidad de bytes a enviar		*/
 #define OPCODE_SET_RF_FREC			(uint8_t)0x86
 #define NOP 	(uint8_t)0x00
@@ -125,6 +126,9 @@ void driver_E22_SetTx_poner_modulo_en_modo_tx(uint32_t timeout);
  *	@note	No contempla poner pin RX en alto necesario para que el módulo E22 reciba
  */
 void driver_E22_SetRx_poner_modulo_en_modo_rx(uint32_t timeout);
+
+
+void driver_E22_SetModulationParams(uint8_t SF, uint8_t BW, uint8_t CR, uint8_t LDRO);
 
 /**
  *	@brief	Configura el dataframe de la comunicación LoRa

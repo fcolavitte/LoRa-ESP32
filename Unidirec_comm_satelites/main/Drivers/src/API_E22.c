@@ -189,6 +189,25 @@ void driver_E22_SetRx_poner_modulo_en_modo_rx(uint32_t timeout) {
 }
 
 
+void driver_E22_SetModulationParams(uint8_t SF, uint8_t BW, uint8_t CR, uint8_t LDRO) {
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	if(SF<7){SF=7;}
+	if(SF>12){SF=12;}
+	if(BW>9){BW=9;}
+	if(CR<1){CR=1;}
+	if(CR>4){CR=4;}
+	uint8_t MOSI_buffer[5] = {};
+	MOSI_buffer[0] = OPCODE_SetModulationParams;
+	MOSI_buffer[1] = SF;
+	MOSI_buffer[2] = BW;
+	MOSI_buffer[3] = CR;
+	MOSI_buffer[4] = LDRO;
+	driver_HAL_transaction(MOSI_buffer, 5, NULL, 0);
+}
+
+
 void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength, bool Header_is_fixed_length, uint8_t bytes_a_enviar) {
 	if(Header_is_fixed_length) {
 		Header_is_fixed_length = 1;
@@ -309,6 +328,10 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 	driver_E22_write_in_buffer(0, p_message, length);
     vTaskDelay(1);
 
+    /* Setear los parametros de modulación */
+    driver_E22_SetModulationParams(7, 4, 1, 0);
+    vTaskDelay(1);
+
 	/* Avisar al E22 el largo de bytes a enviar */
 	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(config_E22.PreambleLength, config_E22.Header_is_fixed_length, length);
     vTaskDelay(1);
@@ -326,7 +349,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
     for (int i=0; i<10;i++) {
         vTaskDelay(10/ portTICK_PERIOD_MS);
         if(9 == i) {
-            printf(">> ERROR: El mensaje no se enviÃ³!\n");
+            printf(">> ERROR: El mensaje no se envió!\n");
         }
         if (0 == driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
         	driver_E22_setear_pin_TX_salida_potencia(LOW);
@@ -350,6 +373,9 @@ void driver_E22_recive_message(void) {
 	/* Establecer que Rx y Tx en aire comiencen desde el byte 0 del buffer circular interno del E22 */
 	driver_E22_SetBufferBaseAddress(0, 0);
     vTaskDelay(1);
+
+    /* Setear los parametros de modulación */
+    driver_E22_SetModulationParams(7, 4, 1, 0);
 
 	/* Avisar al E22 el largo de bytes a enviar */
 	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(config_E22.PreambleLength, config_E22.Header_is_fixed_length, 120);
