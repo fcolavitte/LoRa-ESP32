@@ -226,8 +226,10 @@ void driver_E22_SetSyncWord(uint16_t sync) {
 	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
 		vTaskDelay(1);
 	}
-
-	driver_E22_write_in_registro(&address, &sync, 2); //2 o 4 o 5 en el largo a escribir?
+	uint8_t address[2]={};
+	address[0] = (uint8_t)((ADDRES_LORA_SYNC_WORD_MSB >> 8)  & 0xFF);
+	address[1] = (uint8_t)((ADDRES_LORA_SYNC_WORD_MSB >> 0)  & 0xFF);
+	driver_E22_write_in_registro(address, (uint8_t *)&sync, 2); //2 o 4 o 5 en el largo a escribir?
 }
 
 void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength, bool Header_is_fixed_length, uint8_t bytes_a_enviar) {
