@@ -70,7 +70,7 @@ void driver_E22_reset(void) {
 
 
 void driver_E22_write_in_buffer(uint8_t offset, uint8_t* tx_buffer, uint8_t tx_length) {
-	if(MAX_SIZE_SPI_BUFFERS - 2 > tx_length) {
+	if(MAX_SIZE_SPI_BUFFERS - 2 < tx_length) {
 		tx_length = MAX_SIZE_SPI_BUFFERS - 2;
 	}
 	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
@@ -80,12 +80,12 @@ void driver_E22_write_in_buffer(uint8_t offset, uint8_t* tx_buffer, uint8_t tx_l
 	MOSI_buffer[0] = OPCODE_WRITEBUFFER;
 	MOSI_buffer[1] = offset;
 	memcpy(&(MOSI_buffer[2]), tx_buffer, tx_length);
-	driver_HAL_transaction(MOSI_buffer, tx_length, NULL, 0);
+	driver_HAL_transaction(MOSI_buffer, tx_length+2, NULL, 0);
 }
 
 
 void driver_E22_read_from_buffer(uint8_t offset, uint8_t* rx_buffer, uint8_t rx_length) {
-	if(MAX_SIZE_SPI_BUFFERS - 3 > rx_length) {
+	if(MAX_SIZE_SPI_BUFFERS - 3 < rx_length) {
 		rx_length = MAX_SIZE_SPI_BUFFERS - 3;
 	}
 	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
@@ -100,7 +100,7 @@ void driver_E22_read_from_buffer(uint8_t offset, uint8_t* rx_buffer, uint8_t rx_
 
 
 void driver_E22_write_in_registro(uint8_t *address, uint8_t* tx_buffer, uint8_t tx_length) {
-	if(MAX_SIZE_SPI_BUFFERS - 3 > tx_length) {
+	if(MAX_SIZE_SPI_BUFFERS - 3 < tx_length) {
 		tx_length = MAX_SIZE_SPI_BUFFERS - 3;
 	}
 	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
@@ -108,15 +108,15 @@ void driver_E22_write_in_registro(uint8_t *address, uint8_t* tx_buffer, uint8_t 
 	}
 	uint8_t MOSI_buffer[MAX_SIZE_SPI_BUFFERS] = {};
 	MOSI_buffer[0] = OPCODE_WRITEBUFFER;
-	MOSI_buffer[1] = address[0];
-	MOSI_buffer[2] = address[1];
+	MOSI_buffer[1] = address[1];
+	MOSI_buffer[2] = address[0];
 	memcpy(&(MOSI_buffer[3]), tx_buffer, tx_length);
-	driver_HAL_transaction(MOSI_buffer, tx_length, NULL, 0);
+	driver_HAL_transaction(MOSI_buffer, tx_length+3, NULL, 0);
 }
 
 
 void driver_E22_read_from_registro(uint8_t *address, uint8_t* rx_buffer, uint8_t rx_length) {
-	if(MAX_SIZE_SPI_BUFFERS - 4 > rx_length) {
+	if(MAX_SIZE_SPI_BUFFERS - 4 < rx_length) {
 		rx_length = MAX_SIZE_SPI_BUFFERS - 4;
 	}
 	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
@@ -227,8 +227,11 @@ void driver_E22_SetSyncWord(uint16_t sync) {
 		vTaskDelay(1);
 	}
 	uint8_t address[2]={};
-	address[0] = (uint8_t)((ADDRES_LORA_SYNC_WORD_MSB >> 8)  & 0xFF);
-	address[1] = (uint8_t)((ADDRES_LORA_SYNC_WORD_MSB >> 0)  & 0xFF);
+	address[0] = (uint8_t)((ADDRES_LORA_SYNC_WORD_MSB >> 0)  & 0xFF);
+	address[1] = (uint8_t)((ADDRES_LORA_SYNC_WORD_MSB >> 8)  & 0xFF);
+	uint16_t aux_sync =(uint8_t)((sync >> 8) & 0xFF);
+	aux_sync += (sync & 0xFF)<<8;
+	sync = aux_sync;
 	driver_E22_write_in_registro(address, (uint8_t *)&sync, 2); //2 o 4 o 5 en el largo a escribir?
 }
 
@@ -350,7 +353,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 
     /* Setear potencia de salida */
     //Ver antes de esto usar SetPaConfig y deviceSel
-    //power por defecto está en 0x0E
+    //power por defecto estï¿½ en 0x0E
     //driver_E22_SetTxParams(uint8_t power, uint8_t rampTime);
 
 	/* Establecer que Rx y Tx en aire comiencen desde el byte 0 del buffer circular interno del E22 */
@@ -359,9 +362,9 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 
 	/* Escribir en el buffer interno del E22 el string a enviar en la posiciÃ³n cero */
 	driver_E22_write_in_buffer(0, p_message, length);
-    vTaskDelay(1);
+    vTaskDelay(2);
 
-    /* Setear los parametros de modulación */
+    /* Setear los parametros de modulaciï¿½n */
     driver_E22_SetModulationParams(7, 4, 1, 0);
     vTaskDelay(1);
 
@@ -369,7 +372,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(config_E22.PreambleLength, config_E22.Header_is_fixed_length, length);
     vTaskDelay(1);
 
-    /* Palabra de sincronización */
+    /* Palabra de sincronizaciï¿½n */
     driver_E22_SetSyncWord(0x3444);
 
 	/* Pasar mÃ³dulo a modo Tx con timeout=0 */
@@ -381,7 +384,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
     for (int i=0; i<10;i++) {
         vTaskDelay(10/ portTICK_PERIOD_MS);
         if(9 == i) {
-            printf(">> ERROR: El mensaje no se envió!\n");
+            printf(">> ERROR: El mensaje no se enviï¿½!\n");
         }
         if (0 == driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
         	driver_E22_setear_pin_TX_salida_potencia(LOW);
@@ -410,14 +413,14 @@ void driver_E22_recive_message(void) {
 	driver_E22_SetBufferBaseAddress(0, 0);
     vTaskDelay(1);
 
-    /* Setear los parametros de modulación */
+    /* Setear los parametros de modulaciï¿½n */
     driver_E22_SetModulationParams(7, 4, 1, 0);
 
 	/* Avisar al E22 el largo de bytes a enviar */
 	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(config_E22.PreambleLength, config_E22.Header_is_fixed_length, 120);
     vTaskDelay(1);
 
-    /* Palabra de sincronización */
+    /* Palabra de sincronizaciï¿½n */
     driver_E22_SetSyncWord(0x3444);
 
 	/* Pasar mÃ³dulo a modo Tx con timeout=0 */
