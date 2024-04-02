@@ -37,6 +37,7 @@
 #define OPCODE_SetPacketParams		(uint8_t)0x8C	/* Contiene un parámetro que define la cantidad de bytes a enviar		*/
 #define OPCODE_SetTxParams			(uint8_t)0x8E
 #define OPCODE_SET_RF_FREC			(uint8_t)0x86
+#define OPCODE_SetPaConfig			(uint8_t)0x95
 #define ADDRES_LORA_SYNC_WORD_MSB	(uint16_t)0x0740
 #define NOP 	(uint8_t)0x00
 
@@ -131,7 +132,7 @@ void driver_E22_SetRx_poner_modulo_en_modo_rx(uint32_t timeout);
 
 
 
-
+void driver_E22_SetPaConfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSe);
 
 void driver_E22_SetTxParams(uint8_t power, uint8_t rampTime);
 

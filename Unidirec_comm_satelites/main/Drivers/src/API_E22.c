@@ -107,7 +107,7 @@ void driver_E22_write_in_registro(uint8_t *address, uint8_t* tx_buffer, uint8_t 
 		vTaskDelay(1);
 	}
 	uint8_t MOSI_buffer[MAX_SIZE_SPI_BUFFERS] = {};
-	MOSI_buffer[0] = OPCODE_WRITEBUFFER;
+	MOSI_buffer[0] = OPCODE_WRITEREGISTER;
 	MOSI_buffer[1] = address[1];
 	MOSI_buffer[2] = address[0];
 	memcpy(&(MOSI_buffer[3]), tx_buffer, tx_length);
@@ -188,8 +188,22 @@ void driver_E22_SetRx_poner_modulo_en_modo_rx(uint32_t timeout) {
 	driver_HAL_transaction(MOSI_buffer, 4, NULL, 0);
 }
 
+void driver_E22_SetPaConfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSe){
+	uint8_t MOSI_buffer[5] = {};
+	MOSI_buffer[0] = OPCODE_SetPaConfig;
+	MOSI_buffer[1] = paDutyCycle;
+	MOSI_buffer[2] = hpMax;
+	MOSI_buffer[3] = deviceSe;	/*0 for SX1262*/
+	MOSI_buffer[4] = 0x01;
+	driver_HAL_transaction(MOSI_buffer, 5, NULL, 0);
+}
 
 void driver_E22_SetTxParams(uint8_t power, uint8_t rampTime){
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	driver_E22_SetPaConfig(0x02, 0x02, 0);
+	vTaskDelay(1);
 	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
 		vTaskDelay(1);
 	}
@@ -247,7 +261,7 @@ void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength,
 	MOSI_buffer[1] = (uint8_t)((PreambleLength >> 8) & 0xFF);	/* preambulo 1 - PreambleLength		*/
 	MOSI_buffer[2] = (uint8_t)((PreambleLength >> 0) & 0xFF);	/* preambulo 2 - PreambleLength		*/
 	MOSI_buffer[3] = Header_is_fixed_length;					/* preambulo 3 - HeaderType			*/
-	MOSI_buffer[4] = bytes_a_enviar;							/* preambulo 4 - PayloadLength		*/
+	MOSI_buffer[4] = bytes_a_enviar/8;							/* preambulo 4 - PayloadLength		*/
 	MOSI_buffer[5] = 0;											/* preambulo 5 - CRC - Configurado como OFF */
 	MOSI_buffer[6] = 0;											/* preambulo 6 - InvertIQ - Configurado como Standard IQ setup */
 	driver_HAL_transaction(MOSI_buffer, 7, NULL, 0);
@@ -340,7 +354,7 @@ void driver_E22_print_caracteres_ring_buffer(void) {
 void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 	/* Poner pin de not_reset en alto */
 	driver_HAL_GPIO_write(GPIO_E22_NRST, HIGH);
-    vTaskDelay(1);
+    vTaskDelay(100);
 
 	/* Setear modo de transmisión como LoRa */
 	bool transmitir_en_modo_LoRa = 1;
@@ -352,9 +366,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
     vTaskDelay(1);
 
     /* Setear potencia de salida */
-    //Ver antes de esto usar SetPaConfig y deviceSel
-    //power por defecto est� en 0x0E
-    //driver_E22_SetTxParams(uint8_t power, uint8_t rampTime);
+    driver_E22_SetTxParams(0x05, 0x02);
 
 	/* Establecer que Rx y Tx en aire comiencen desde el byte 0 del buffer circular interno del E22 */
 	driver_E22_SetBufferBaseAddress(0, 0);
@@ -362,7 +374,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 
 	/* Escribir en el buffer interno del E22 el string a enviar en la posición cero */
 	driver_E22_write_in_buffer(0, p_message, length);
-    vTaskDelay(2);
+    vTaskDelay(1);
 
     /* Setear los parametros de modulaci�n */
     driver_E22_SetModulationParams(7, 4, 1, 0);
@@ -377,7 +389,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 
 	/* Pasar módulo a modo Tx con timeout=0 */
 	driver_E22_setear_pin_TX_salida_potencia(HIGH);
-	vTaskDelay(1);
+	vTaskDelay(10);
     driver_E22_SetTx_poner_modulo_en_modo_tx(0);
 
     /* Tras retorno de pin busy del E22 a low, poner pin de Tx en low*/
@@ -398,7 +410,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 void driver_E22_recive_message(void) {
 	/* Poner pin de not_reset en alto */
 	driver_HAL_GPIO_write(GPIO_E22_NRST, HIGH);
-    vTaskDelay(1);
+    vTaskDelay(100);
 
 	/* Setear modo de transmisión como LoRa */
 	bool transmitir_en_modo_LoRa = 1;
@@ -410,7 +422,7 @@ void driver_E22_recive_message(void) {
     vTaskDelay(1);
 
 	/* Establecer que Rx y Tx en aire comiencen desde el byte 0 del buffer circular interno del E22 */
-	driver_E22_SetBufferBaseAddress(0, 0);
+	driver_E22_SetBufferBaseAddress(0, 20);
     vTaskDelay(1);
 
     /* Setear los parametros de modulaci�n */
@@ -423,7 +435,7 @@ void driver_E22_recive_message(void) {
     /* Palabra de sincronizaci�n */
     driver_E22_SetSyncWord(0x3444);
 
-	/* Pasar módulo a modo Tx con timeout=0 */
+	/* Habilitar el modo Rx de la potencia */
     driver_E22_setear_pin_RX_entrada_aire(HIGH);
 	vTaskDelay(1);
 	/* Timeout 0xFFFFFF hace que esté en modo recepción continua hasta que se cambia el
