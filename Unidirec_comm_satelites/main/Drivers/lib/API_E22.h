@@ -38,6 +38,7 @@
 #define OPCODE_SetTxParams			(uint8_t)0x8E
 #define OPCODE_SET_RF_FREC			(uint8_t)0x86
 #define OPCODE_SetPaConfig			(uint8_t)0x95
+#define OPCODE_SetDIO3asTCXOCtrl    (uint8_t)0x97
 #define ADDRES_LORA_SYNC_WORD_MSB	(uint16_t)0x0740
 #define NOP 	(uint8_t)0x00
 
@@ -101,6 +102,11 @@ void driver_E22_write_in_registro(uint8_t *address, uint8_t* tx_buffer, uint8_t 
  *	@param	[uint8_t] rx_length: Longitud en bytes a leer desde el registro
  */
 void driver_E22_read_from_registro(uint8_t *address, uint8_t* rx_buffer, uint8_t rx_length);
+
+/**
+ *	@brief	Póne el módulo en modo Stand By
+ */
+void driver_E22_set_standBy(void);
 
 /**
  *	@brief	Recupera la cantidad de bytes recibidos por aire y la posición del
@@ -199,6 +205,11 @@ void driver_E22_print_hexadecimal_ring_buffer(void);
  * @note	Imprime los bytes caracteres ascii
  */
 void driver_E22_print_caracteres_ring_buffer(void);
+
+/**
+ * @brief	Configura el pin interno DIO3 del módulo como control del TCXO
+ */
+void driver_E22_SetDIO3asTCXOCtrl(void);
 
 
 /* ----- Métodos setter y getter para la configuración LoRa ----- */
