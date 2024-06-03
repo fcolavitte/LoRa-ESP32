@@ -379,8 +379,8 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
     vTaskDelay(100);
 
 	/* Set Stand By */
-	driver_E22_set_standBy();
-	vTaskDelay(1);
+	//driver_E22_set_standBy();
+	//vTaskDelay(1);
 
 	/* Configurar pin DIO3 interno del módulo como control de XTAL */
 	driver_E22_SetDIO3asTCXOCtrl();
@@ -392,15 +392,9 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 
 	/* Calibrar */
 
-
-
 	/* Setear Capacitor de XTAL */
 
-
-
 	/* Calibrar imágen */
-
-
 
 	/* Setear modo de transmisión como LoRa */
 	bool transmitir_en_modo_LoRa = 1;
@@ -412,7 +406,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
     vTaskDelay(1);
 
     /* Setear potencia de salida */
-    driver_E22_SetTxParams(0x05, 0x02);//0x16,0x05
+    driver_E22_SetTxParams(0x05, 0x02);
     vTaskDelay(1);
 
 	/* Establecer que Rx y Tx en aire comiencen desde el byte 0 del buffer circular interno del E22 */
@@ -424,9 +418,8 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
     vTaskDelay(1);
 
     /* Setear los parametros de modulaci�n */
-    driver_E22_SetModulationParams(9, 8, 1, 0);	//(7, 4, 1, 0) por defecto, con (7,8,1,0) se visualiza mejor en el LDR
-    //Con (9, 8, 1, 0) solo permite mandar una vez y hay que cerrar y volver a abrir la consola para volver a mandar
-
+    driver_E22_SetModulationParams(10, 8, 1, 0);	//(7, 4, 1, 0) por defecto, con (7,8,1,0) se visualiza mejor en el LDR
+    //Con (9, 8, 1, 0) se visualiza mejor
 	vTaskDelay(1);
 
 	/* Avisar al E22 el largo de bytes a enviar */
@@ -442,8 +435,6 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 	vTaskDelay(10);
 
 	/* Corrección de calidad de la modulación "fix modulation quality" */
-
-
 
 	/* Comenzar a enviar mensaje */
     driver_E22_SetTx_poner_modulo_en_modo_tx(1000);//300 //mandar -> timeout*(2^6) = "tiempo>>6"
@@ -468,6 +459,14 @@ void driver_E22_recive_message(void) {
 	driver_HAL_GPIO_write(GPIO_E22_NRST, HIGH);
     vTaskDelay(100);
 
+	/* Configurar pin DIO3 interno del módulo como control de XTAL */
+	driver_E22_SetDIO3asTCXOCtrl();
+	vTaskDelay(10);
+
+	/* Set Stand By */
+	driver_E22_set_standBy();
+	vTaskDelay(1);
+
 	/* Setear modo de transmisión como LoRa */
 	bool transmitir_en_modo_LoRa = 1;
 	driver_E22_SetPacketType(transmitir_en_modo_LoRa);
@@ -478,7 +477,7 @@ void driver_E22_recive_message(void) {
     vTaskDelay(1);
 
 	/* Establecer que Rx y Tx en aire comiencen desde el byte 0 del buffer circular interno del E22 */
-	driver_E22_SetBufferBaseAddress(0, 20);
+	driver_E22_SetBufferBaseAddress(0, 100);
     vTaskDelay(1);
 
     /* Setear los parametros de modulaci�n */
@@ -496,7 +495,7 @@ void driver_E22_recive_message(void) {
 	vTaskDelay(1);
 	/* Timeout 0xFFFFFF hace que esté en modo recepción continua hasta que se cambia el
 	 * modo de recepción (con otro timeout) o hasta que se fuerza por opcode a it a idle o tx*/
-	driver_E22_SetRx_poner_modulo_en_modo_rx(0xFFFFFF);
+	driver_E22_SetRx_poner_modulo_en_modo_rx(0x1000);//0xFFFFFF
 }
 
 
