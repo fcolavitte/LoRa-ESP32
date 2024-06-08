@@ -37,9 +37,13 @@
 #define OPCODE_SetPacketParams		(uint8_t)0x8C	/* Contiene un parámetro que define la cantidad de bytes a enviar		*/
 #define OPCODE_SetTxParams			(uint8_t)0x8E
 #define OPCODE_SET_RF_FREC			(uint8_t)0x86
+#define OPCODE_CalibrateFunction    (uint8_t)0x89
 #define OPCODE_SetPaConfig			(uint8_t)0x95
 #define OPCODE_SetDIO3asTCXOCtrl    (uint8_t)0x97
+#define OPCODE_CalibrateImage       (uint8_t)0x98
 #define ADDRES_LORA_SYNC_WORD_MSB	(uint16_t)0x0740
+#define ADDRES_TX_MODULATION    	(uint16_t)0x0889
+#define ADDRES_IQ_POLARITY_SETUP  	(uint16_t)0x0736
 #define NOP 	(uint8_t)0x00
 
 /*** GPIO ***/
@@ -136,13 +140,36 @@ void driver_E22_SetTx_poner_modulo_en_modo_tx(uint32_t timeout);
  */
 void driver_E22_SetRx_poner_modulo_en_modo_rx(uint32_t timeout);
 
-
-
+/**
+ *	@brief Segun los parámetros recibidos se configura para el SX1262 o 1261
+ *	@param [uint8_t] paDutyCycle: valor por defecto 0x02.
+ *	@param [uint8_t] hpMax: valor por defecto 0x03.
+ *	@param [uint8_t] deviceSe: Debe ser 0.
+ *  @note  Para el SX1262 que tiene el E22-900M30S los parámetros deben ser (0x02,0x03,0)
+ */
 void driver_E22_SetPaConfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSe);
 
+/**
+ *	@brief Establece la potencia de salida y tiempo de rampa del dispositivo emisor
+ *	@param [uint8_t] power: valor por defecto 0x16.
+ *	@param [uint8_t] rampTime: valor por defecto 0x05.
+ */
 void driver_E22_SetTxParams(uint8_t power, uint8_t rampTime);
 
+/**
+ *	@brief  Configura los parametros de comunicación, deben coincidir en el módulo Tx y Rx
+ *	@param [uint8_t] SpringFactor: Valor por defecto 7. Puede llevarse hasta 10 para visualizar en SDR.
+ *	@param [uint8_t] BandWidth: Valor por defecto 4 (31,25 kHz).
+ *	@param [uint8_t] CodingRate: Valor por defecto 1.
+ *	@param [uint8_t] LowDataRateOptimization: Valor por defecto 0.
+ *                   Para paquetedes de larga duración se recomienda que esté en 1.
+ */
 void driver_E22_SetModulationParams(uint8_t SF, uint8_t BW, uint8_t CR, uint8_t LDRO);
+
+/**
+ *	@brief  Corrige el registro 0x0889 si tiene un valor erroneo tras reiniciar el dispositivo.
+ */
+void driver_E22_fix_modulation_quality(uint8_t BW);
 
 void driver_E22_SetSyncWord(uint16_t sync);
 
@@ -151,6 +178,11 @@ void driver_E22_SetSyncWord(uint16_t sync);
  *	@note	El parámetro más importante es "bytes_a_enviar". En modo Rx define la cantidad máxima de bytes a recibir por mensaje.
  */
 void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength, bool Header_is_fixed_length, uint8_t bytes_a_enviar);
+
+/**
+ *	@brief  Corrige el registro 0x0736 si tiene un valor erroneo tras reiniciar el dispositivo.
+ */
+void driver_E22_fix_invertedIQ_register(bool is_standard_IQ);
 
 /**
  *	@brief	Setea el modo de transmisión del E22. Puede ser LoRa o FSK.
@@ -211,6 +243,13 @@ void driver_E22_print_caracteres_ring_buffer(void);
  */
 void driver_E22_SetDIO3asTCXOCtrl(void);
 
+/**
+ * @brief	Calibración del módulo
+ * @note    Se debe llamar estando en modo standby
+ */
+void driver_E22_Calibrate(void);
+
+void driver_E22_CalibrateImage(void);
 
 /* ----- Métodos setter y getter para la configuración LoRa ----- */
 
