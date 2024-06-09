@@ -32,7 +32,7 @@ pos_menu_t pos_menu_actual;
 
 void analizar_input_USB(void);
 void read_command(void);
-void send_message(void);
+void send_message(uint8_t length);
 void text_lower(uint8_t *text);
 void display_tree(void);
 pos_menu_t read_cd_ID(void);
@@ -59,12 +59,13 @@ static message_mode_config_t _message_mode_config;
  *        Al finalizar limpia el String USB_input[].
  */
 void analizar_input_USB(void){
+	uint8_t length = (uint8_t)i_USB_input - 1;
 	i_USB_input=0;
 	if(USB_input[0]=='$'){
 		read_command();
 	}
 	if(USB_input[0]=='>'){
-		send_message();
+		send_message(length);
 	}
 	if(USB_input[0]>='0' && USB_input[0]<='9'){
 	    printf("Ingreso: %s\n", USB_input);
@@ -140,9 +141,9 @@ pos_menu_t read_cd_ID(void){
 /**
  * @brief	Envía un mensaje por LoRa
  */
-void send_message(void){
+void send_message(uint8_t length){
 	printf("Enviando \"%s\" por LoRa...\n",USB_input+1);
-	driver_E22_send_message(USB_input+1, sizeof(USB_input+1));
+	driver_E22_send_message(USB_input+1, length);
 }
 
 

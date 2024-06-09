@@ -44,6 +44,7 @@
 #define ADDRES_LORA_SYNC_WORD_MSB	(uint16_t)0x0740
 #define ADDRES_TX_MODULATION    	(uint16_t)0x0889
 #define ADDRES_IQ_POLARITY_SETUP  	(uint16_t)0x0736
+#define ADDRES_RxGainConfiguration  (uint16_t)0x08AC
 #define NOP 	(uint8_t)0x00
 
 /*** GPIO ***/
@@ -250,6 +251,8 @@ void driver_E22_SetDIO3asTCXOCtrl(void);
 void driver_E22_Calibrate(void);
 
 void driver_E22_CalibrateImage(void);
+
+void driver_E22_SetRxGain(void);
 
 /* ----- Métodos setter y getter para la configuración LoRa ----- */
 

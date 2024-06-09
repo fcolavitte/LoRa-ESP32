@@ -32,12 +32,52 @@ uint8_t driver_HAL_transaction(uint8_t *tx_buffer, uint8_t tx_length, uint8_t *r
 void driver_HAL_gpio_init(uint8_t GPIO_num, bool GPIO_is_input);
 void driver_HAL_GPIO_write(uint8_t GPIO, bool state);
 bool driver_HAL_GPIO_read(uint8_t GPIO);
+void driver_HAL_SPI_transaction_view(uint8_t bytes_length, uint8_t * buffer, bool is_tx);
+void driver_HAL_set_eneable_transaction_view(bool eneable);
+bool driver_HAL_get_eneable_transaction_view(void);
 
 /********************** internal data definition *****************************/
+
+bool transaction_view_eneable = 1;
 
 /********************** external data definition *****************************/
 
 /********************** internal functions definition ************************/
+
+void driver_HAL_set_eneable_transaction_view(bool eneable){
+    if (0!=eneable){
+        transaction_view_eneable = 1;
+    } else {
+        transaction_view_eneable = 0;
+    }
+}
+
+bool driver_HAL_get_eneable_transaction_view(void){
+    return transaction_view_eneable;
+}
+
+void driver_HAL_SPI_transaction_view(uint8_t bytes_length, uint8_t * buffer, bool is_tx){
+    // Create a buffer to store the formatted string
+    char formatted_string[bytes_length * 5 + 1]; // Allocate enough space for hex, spaces and null terminator
+
+    int index = 0;
+    for (int i = 0; i < bytes_length; i++)
+    {
+        // Format each byte as a two-digit hex string and store it in the buffer
+        sprintf(formatted_string + index, "0x%02X ", buffer[i]);
+        index += 5; // Increment index by 5 for the formatted byte + spaces
+    }
+
+    // Print the formatted string with a trailing n
+    if(0!=bytes_length&&1==transaction_view_eneable){
+        if(is_tx){
+            printf("\n>> SPI: TX:  %s\n", formatted_string);
+        } else {
+            printf("\n>> SPI: RX:  %s\n", formatted_string);
+        }
+    }
+    
+}
 
 /**
  *	@brief	La función inicia el periférico SPI
@@ -95,12 +135,23 @@ uint8_t driver_HAL_transaction(uint8_t *tx_buffer, uint8_t tx_length, uint8_t *r
         rx_length = 0;
         rx_length = 0;
     }
+
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		printf("\n>> PIN BUSY ocupado!\n");
+	}
+
     spi_transaction_t spi_transaction = {};
     spi_transaction.length = tx_length*8;
     spi_transaction.rxlength = rx_length*8;
     spi_transaction.tx_buffer = tx_buffer;
     spi_transaction.rx_buffer = rx_buffer;
     spi_device_transmit(hspi_device, &spi_transaction);
+    
+    if(transaction_view_eneable) {
+        driver_HAL_SPI_transaction_view(tx_length, tx_buffer,1);
+        driver_HAL_SPI_transaction_view(rx_length, rx_buffer,0);
+    }
+
     return 1;
 }
 
