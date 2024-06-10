@@ -233,6 +233,10 @@ void driver_E22_recive_message(void);
  */
 void driver_E22_print_hexadecimal_ring_buffer(void);
 
+
+void driver_E22_print_hexadecimal_from_register(void);
+
+
 /**
  * @brief	imprime por serie lo que se encuentra en el ring buffer interno del E22
  * @note	Imprime los bytes caracteres ascii

@@ -305,9 +305,9 @@ void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength,
 	MOSI_buffer[1] = (uint8_t)((PreambleLength >> 8) & 0xFF);	/* preambulo 1 - PreambleLength		*/
 	MOSI_buffer[2] = (uint8_t)((PreambleLength >> 0) & 0xFF);	/* preambulo 2 - PreambleLength		*/
 	//MOSI_buffer[3] = Header_is_fixed_length;					/* preambulo 3 - HeaderType			*/
-	MOSI_buffer[3] = 0;					/* preambulo 3 - HeaderType			*/
+	MOSI_buffer[3] = 0;//0	/*0 = Variable length packet (explicit header)*/		/* preambulo 3 - HeaderType			*/
 	MOSI_buffer[4] = bytes_a_enviar;							/* preambulo 4 - PayloadLength		*/
-	MOSI_buffer[5] = 1;											/* preambulo 5 - CRC - Configurado como OFF */
+	MOSI_buffer[5] = 1;	//1										/* preambulo 5 - CRC - Configurado como OFF */
 	MOSI_buffer[6] = 0;											/* preambulo 6 - InvertIQ - Configurado como Standard IQ setup */
 	MOSI_buffer[7] = 0x00;
 	MOSI_buffer[8] = 0x00;
@@ -399,6 +399,32 @@ void driver_E22_print_hexadecimal_ring_buffer(void) {
 		uint8_t rx_buffer;
 		driver_E22_read_from_buffer((uint8_t)offset, &rx_buffer, 1);
 		printf("0x%02x ", rx_buffer);
+		vTaskDelay(10/ portTICK_PERIOD_MS);
+	}
+	printf("\n");
+	
+	/* Regresar estado de visualización de transacción SPI al que tenía previamente*/
+	driver_HAL_set_eneable_transaction_view(transaction_view_state);
+}
+
+
+void driver_E22_print_hexadecimal_from_register(void) {
+	/* Guardar estado de visaulización de transacción SPI */
+	bool transaction_view_state = driver_HAL_get_eneable_transaction_view();
+	driver_HAL_set_eneable_transaction_view(0);
+
+	/* Mostrar caracteres del buffer interno del E22*/
+	printf("Contenido del buffer del E22:");
+	for (uint16_t address = 0; address <0xFFFF; address++) {
+		if(0 == address%8){
+			printf("\naddress 0x%04x:",address);
+		}
+		uint8_t rx_buffer;
+		uint8_t address_array [2] = {};
+		address_array [0] = (uint8_t)((address >> 0)  & 0xFF);
+		address_array[1] = (uint8_t)((address >> 8)  & 0xFF);
+		driver_E22_read_from_registro(address_array, &rx_buffer, 1);
+		printf(" 0x%02x", rx_buffer);
 		vTaskDelay(10/ portTICK_PERIOD_MS);
 	}
 	printf("\n");
@@ -632,11 +658,11 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
     driver_E22_setear_pin_RX_entrada_aire(LOW);
 	vTaskDelay(1);
 	driver_E22_setear_pin_TX_salida_potencia(HIGH);
-	vTaskDelay(10);
+	vTaskDelay(100);
 
 	/* Comenzar a enviar mensaje */
 	/* TX:[0x83 0x1D 0x4C 0x00] */
-    driver_E22_SetTx_poner_modulo_en_modo_tx(30000);//300 //mandar -> timeout*(2^6) = "tiempo>>6"
+    driver_E22_SetTx_poner_modulo_en_modo_tx(30000);//30000 //Con (10,4,1,0) alcanza con 5000
 	vTaskDelay(1);
 
     /* Tras retorno de pin busy del E22 a low, poner pin de Tx en low*/
@@ -689,6 +715,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 		driver_HAL_transaction(MOSI_buffer, 3, NULL, 0);
 	}
 	vTaskDelay(1);
+	//driver_E22_print_hexadecimal_from_register();
 }
 
 
@@ -847,7 +874,7 @@ void driver_E22_recive_message(void) {
 	/* Timeout 0xFFFFFF hace que esté en modo recepción continua hasta que se cambia el
 	 * modo de recepción (con otro timeout) o hasta que se fuerza por opcode a ir a idle o tx*/
 	/* TX:[0x82 0x1D 0x4C 0x00] */
-	driver_E22_SetRx_poner_modulo_en_modo_rx(0x1D4C00);//0xFFFFFF//0x1000
+	driver_E22_SetRx_poner_modulo_en_modo_rx(0x1D4C00);//0xFFFFFF//0x1D4C00
 	vTaskDelay(1);
 }
 
