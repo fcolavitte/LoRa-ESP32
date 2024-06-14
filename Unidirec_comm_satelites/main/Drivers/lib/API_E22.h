@@ -183,7 +183,7 @@ void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength,
 /**
  *	@brief  Corrige el registro 0x0736 si tiene un valor erroneo tras reiniciar el dispositivo.
  */
-void driver_E22_fix_invertedIQ_register(bool is_standard_IQ);
+void driver_E22_fix_invertedIQ_register(bool is_standard_IQ, bool is_TX);
 
 /**
  *	@brief	Setea el modo de transmisión del E22. Puede ser LoRa o FSK.

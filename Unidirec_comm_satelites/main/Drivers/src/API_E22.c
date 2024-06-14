@@ -314,10 +314,9 @@ void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength,
 	MOSI_buffer[9] = 0x00;
 	driver_HAL_transaction(MOSI_buffer, 10, NULL, 0);
 	vTaskDelay(1);
-	driver_E22_fix_invertedIQ_register(1);
 }
 
-void driver_E22_fix_invertedIQ_register(bool is_standard_IQ){
+void driver_E22_fix_invertedIQ_register(bool is_standard_IQ, bool is_TX){
 	uint8_t address[2]={};
 	address[0] = (uint8_t)((ADDRES_IQ_POLARITY_SETUP >> 0)  & 0xFF);
 	address[1] = (uint8_t)((ADDRES_IQ_POLARITY_SETUP >> 8)  & 0xFF);
@@ -330,6 +329,18 @@ void driver_E22_fix_invertedIQ_register(bool is_standard_IQ){
 		value [0] = value [0] | 0x04;
 	}
 	value[0] = 0x0D;
+	vTaskDelay(1);
+	if(is_TX){
+    	driver_E22_setear_pin_RX_entrada_aire(LOW);
+		vTaskDelay(2);
+		driver_E22_setear_pin_TX_salida_potencia(HIGH);
+		vTaskDelay(10);
+	} else {
+    	driver_E22_setear_pin_TX_salida_potencia(LOW);
+		vTaskDelay(2);
+		driver_E22_setear_pin_RX_entrada_aire(HIGH);
+		vTaskDelay(10);
+	}
 	driver_E22_write_in_registro(address, value, 1);
 }
 
@@ -601,11 +612,15 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 	vTaskDelay(1);
 
 	/* Avisar al E22 el largo de bytes a enviar */
-	/* TX:[0x8C 0x00 0x0C 0x00 0x09 0x01 0x00 0x00 0x00 0x00]
-	 * TX:[0x1D 0x07 0x36 0x00] *
-	 * TX:[0x0D 0x07 0x36 0x0D] */
-	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(12, config_E22.Header_is_fixed_length, 4);
+	/* TX:[0x8C 0x00 0x0C 0x00 0x09 0x01 0x00 0x00 0x00 0x00] */
+	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(12, config_E22.Header_is_fixed_length, 9);
     vTaskDelay(1);
+	
+	
+	/* TX:[0x1D 0x07 0x36 0x00] *
+	 * Set TXEN HIGH
+	 * TX:[0x0D 0x07 0x36 0x0D] */
+	driver_E22_fix_invertedIQ_register(1, 1);
 
     /* Palabra de sincronizaci�n */
 	/* TX:[0x0D 0x07 0x40 0x34 0x44] */
@@ -654,16 +669,12 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 	}
 	vTaskDelay(1);
 
-	/* Pasar módulo a modo Tx con timeout=0 */
-    driver_E22_setear_pin_RX_entrada_aire(LOW);
-	vTaskDelay(1);
-	driver_E22_setear_pin_TX_salida_potencia(HIGH);
-	vTaskDelay(100);
+
 
 	/* Comenzar a enviar mensaje */
 	/* TX:[0x83 0x1D 0x4C 0x00] */
     driver_E22_SetTx_poner_modulo_en_modo_tx(30000);//30000 //Con (10,4,1,0) alcanza con 5000
-	vTaskDelay(1);
+	vTaskDelay(10);
 
     /* Tras retorno de pin busy del E22 a low, poner pin de Tx en low*/
     for (int i=0; i<100;i++) {
@@ -824,11 +835,17 @@ void driver_E22_recive_message(void) {
 
 	/* Avisar al E22 el largo de bytes a enviar */
 	//driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(config_E22.PreambleLength, config_E22.Header_is_fixed_length, 120);
-	/* TX:[0x8C 0x00 0x0C 0x00 0x09 0x01 0x00 0x00 0x00 0x00]
-	 * TX:[0x1D 0x07 0x36 0x00] *
-	 * TX:[0x0D 0x07 0x36 0x0D] */
-	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(12, config_E22.Header_is_fixed_length, 4);
+	/* TX:[0x8C 0x00 0x0C 0x00 0x09 0x01 0x00 0x00 0x00 0x00] */
+	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(12, config_E22.Header_is_fixed_length, 9);
     vTaskDelay(1);
+	
+	
+	/* TX:[0x1D 0x07 0x36 0x00] *
+	 * Set RXEN HIGH
+	 * TX:[0x0D 0x07 0x36 0x0D] */
+	driver_E22_fix_invertedIQ_register(1, 0);
+    vTaskDelay(1);
+
 
     /* Palabra de sincronizaci�n */
 	/* TX:[0x0D 0x07 0x40 0x34 0x44] */
@@ -866,16 +883,11 @@ void driver_E22_recive_message(void) {
 	}
 	vTaskDelay(1);
 
-	/* Habilitar el modo Rx de la potencia */
-	driver_E22_setear_pin_TX_salida_potencia(LOW);
-	vTaskDelay(1);
-    driver_E22_setear_pin_RX_entrada_aire(HIGH);
-	vTaskDelay(10);
 	/* Timeout 0xFFFFFF hace que esté en modo recepción continua hasta que se cambia el
 	 * modo de recepción (con otro timeout) o hasta que se fuerza por opcode a ir a idle o tx*/
 	/* TX:[0x82 0x1D 0x4C 0x00] */
 	driver_E22_SetRx_poner_modulo_en_modo_rx(0x1D4C00);//0xFFFFFF//0x1D4C00
-	vTaskDelay(1);
+	vTaskDelay(100);
 }
 
 
