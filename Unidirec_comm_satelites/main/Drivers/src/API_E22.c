@@ -65,9 +65,10 @@ void driver_E22_init(void) {
 
 void driver_E22_reset(void) {
 	driver_HAL_GPIO_write(GPIO_E22_NRST, LOW);
-	vTaskDelay(10/ portTICK_PERIOD_MS);
+    vTaskDelay(100);
 	driver_HAL_GPIO_write(GPIO_E22_NRST, HIGH);
-	vTaskDelay(10/ portTICK_PERIOD_MS);
+    vTaskDelay(100);
+	driver_E22_set_standBy();
 }
 
 
@@ -83,6 +84,7 @@ void driver_E22_write_in_buffer(uint8_t offset, uint8_t* tx_buffer, uint8_t tx_l
 	MOSI_buffer[1] = offset;
 	memcpy(&(MOSI_buffer[2]), tx_buffer, tx_length);
 	driver_HAL_transaction(MOSI_buffer, tx_length+2, NULL, 0);
+    vTaskDelay(1);
 }
 
 
@@ -98,8 +100,35 @@ void driver_E22_read_from_buffer(uint8_t offset, uint8_t* rx_buffer, uint8_t rx_
 	MOSI_buffer[1] = offset;
 	MOSI_buffer[2] = NOP;
 	driver_HAL_transaction(MOSI_buffer, 3, rx_buffer, rx_length);
+    vTaskDelay(1);
 }
 
+void driver_E22_clear_buffer(uint8_t offset, uint8_t length, uint8_t characters) {
+	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
+		vTaskDelay(1);
+	}
+	if (offset < 255) {
+		uint8_t _length = length;
+		if(length > MAX_SIZE_SPI_BUFFERS-2){
+			_length = length%(MAX_SIZE_SPI_BUFFERS-2);
+		}
+		uint8_t MOSI_buffer[MAX_SIZE_SPI_BUFFERS] = {};
+		for(uint8_t i = 0; i <= length/(MAX_SIZE_SPI_BUFFERS-2); i++){
+			for(int i = 0; i<MAX_SIZE_SPI_BUFFERS;i++){
+				MOSI_buffer[i] = characters;
+			}
+			MOSI_buffer[0] = OPCODE_WRITEBUFFER;
+			MOSI_buffer[1] = offset + i*(MAX_SIZE_SPI_BUFFERS-2);
+			if(length/(MAX_SIZE_SPI_BUFFERS-2) == i){
+				driver_HAL_transaction(MOSI_buffer, _length+2, NULL, 0);
+    			vTaskDelay(1);
+			} else {
+				driver_HAL_transaction(MOSI_buffer, MAX_SIZE_SPI_BUFFERS, NULL, 0);
+    			vTaskDelay(1);
+			}
+		}
+	}
+}
 
 void driver_E22_write_in_registro(uint8_t *address, uint8_t* tx_buffer, uint8_t tx_length) {
 	if(MAX_SIZE_SPI_BUFFERS - 3 < tx_length) {
@@ -137,6 +166,7 @@ void driver_E22_set_standBy(void){
 	MOSI_buffer[0] = OPCODE_SETSTANDBY;
 	MOSI_buffer[1] = 0x00;
 	driver_HAL_transaction(MOSI_buffer, 2, NULL, 0);
+	vTaskDelay(1);
 }
 
 void driver_E22_GetRxBufferStatus(uint8_t* PayloadLengthRx, uint8_t* RxBufferPointer) {
@@ -162,23 +192,26 @@ void driver_E22_SetBufferBaseAddress(uint8_t tx_base_adress, uint8_t rx_base_adr
 	MOSI_buffer[1] = tx_base_adress;
 	MOSI_buffer[2] = rx_base_adress;
 	driver_HAL_transaction(MOSI_buffer, 3, NULL, 0);
+    vTaskDelay(1);
 }
 
 
-void driver_E22_SetTx_poner_modulo_en_modo_tx(uint32_t timeout) {	/* el vlaor recivido es en ms*/
+void driver_E22_SetTx_poner_modulo_en_modo_tx(uint32_t timeout) {
 	if(timeout > 0xFFFFFF) {
 		timeout = 0xFFFFFF;
 	}
 	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
 		vTaskDelay(1);
 	}
-	timeout=timeout<<6;
+	//Pasaje de milisegundos al valor esperado por el E22
+	timeout = timeout<<6;
 	uint8_t MOSI_buffer[4] = {};
 	MOSI_buffer[0] = OPCODE_SET_TX_MODE;
 	MOSI_buffer[1] = (uint8_t)(timeout >> 16);
 	MOSI_buffer[2] = (uint8_t)(timeout >> 8);
 	MOSI_buffer[3] = (uint8_t)(timeout >> 0);
 	driver_HAL_transaction(MOSI_buffer, 4, NULL, 0);
+	vTaskDelay(10);
 }
 
 
@@ -208,6 +241,7 @@ void driver_E22_SetPaConfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSe
 	MOSI_buffer[3] = deviceSe;		/*0 para SX1262*/
 	MOSI_buffer[4] = 0x01;
 	driver_HAL_transaction(MOSI_buffer, 5, NULL, 0);
+	vTaskDelay(1);
 }
 
 void driver_E22_SetTxParams(uint8_t power, uint8_t rampTime){
@@ -222,6 +256,7 @@ void driver_E22_SetTxParams(uint8_t power, uint8_t rampTime){
 	MOSI_buffer[1] = power;
 	MOSI_buffer[2] = rampTime;
 	driver_HAL_transaction(MOSI_buffer, 3, NULL, 0);
+    vTaskDelay(1);
 }
 
 
@@ -245,6 +280,7 @@ void driver_E22_SetModulationParams(uint8_t SF, uint8_t BW, uint8_t CR, uint8_t 
 	MOSI_buffer[7] = 0x00;
 	MOSI_buffer[8] = 0x00;
 	driver_HAL_transaction(MOSI_buffer, 9, NULL, 0);
+	vTaskDelay(1);
 }
 
 void driver_E22_fix_modulation_quality(uint8_t BW){
@@ -260,36 +296,20 @@ void driver_E22_fix_modulation_quality(uint8_t BW){
 		value [0] = value [0] | 0x04;
 	}
 	driver_E22_write_in_registro(address, value, 1);
+	vTaskDelay(1);
 }
 
 void driver_E22_SetSyncWord(uint16_t sync) {
 	if(driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
 		vTaskDelay(1);
 	}
-	/*uint8_t address[2]={};
+	uint8_t address[2]={};
 	address[0] = (uint8_t)((ADDRES_LORA_SYNC_WORD_MSB >> 0)  & 0xFF);
 	address[1] = (uint8_t)((ADDRES_LORA_SYNC_WORD_MSB >> 8)  & 0xFF);
 	uint16_t aux_sync =(uint8_t)((sync >> 8) & 0xFF);
 	aux_sync += (sync & 0xFF)<<8;
 	sync = aux_sync;
-	driver_E22_write_in_registro(address, (uint8_t *)&sync, 2);*/
-	{
-		uint8_t MOSI_buffer[4] = {};
-		MOSI_buffer[0] = 0x0D;
-		MOSI_buffer[1] = 0x07;
-		MOSI_buffer[2] = 0x40;
-		MOSI_buffer[3] = 0x34;
-		driver_HAL_transaction(MOSI_buffer, 4, NULL, 0);
-	}
-	vTaskDelay(1);
-	{
-		uint8_t MOSI_buffer[4] = {};
-		MOSI_buffer[0] = 0x0D;
-		MOSI_buffer[1] = 0x07;
-		MOSI_buffer[2] = 0x41;
-		MOSI_buffer[3] = 0x44;
-		driver_HAL_transaction(MOSI_buffer, 4, NULL, 0);
-	}
+	driver_E22_write_in_registro(address, (uint8_t *)&sync, 2);
 	vTaskDelay(1);
 }
 
@@ -313,10 +333,10 @@ void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength,
 	MOSI_buffer[8] = 0x00;
 	MOSI_buffer[9] = 0x00;
 	driver_HAL_transaction(MOSI_buffer, 10, NULL, 0);
-	vTaskDelay(1);
+	vTaskDelay(2);
 }
 
-void driver_E22_fix_invertedIQ_register(bool is_standard_IQ, bool is_TX){
+void driver_E22_fix_invertedIQ_register_and_eneable_power_module(bool is_standard_IQ, bool is_TX){
 	uint8_t address[2]={};
 	address[0] = (uint8_t)((ADDRES_IQ_POLARITY_SETUP >> 0)  & 0xFF);
 	address[1] = (uint8_t)((ADDRES_IQ_POLARITY_SETUP >> 8)  & 0xFF);
@@ -355,6 +375,7 @@ void driver_E22_SetPacketType(bool transmitir_en_modo_LoRa) {
 	MOSI_buffer[0] = OPCODE_SetPacketType;
 	MOSI_buffer[1] = transmitir_en_modo_LoRa;
 	driver_HAL_transaction(MOSI_buffer, 2, NULL, 0);
+    vTaskDelay(1);
 }
 
 
@@ -371,6 +392,7 @@ void driver_E22_SetRfFrequency(uint32_t frec_deseada_MHz) {
 	MOSI_buffer[3] = (uint8_t)((param_RfFreq >> 8)  & 0xFF);
 	MOSI_buffer[4] = (uint8_t)((param_RfFreq >> 0)  & 0xFF);
 	driver_HAL_transaction(MOSI_buffer, 5, NULL, 0);
+    vTaskDelay(1);
 }
 
 
@@ -405,7 +427,7 @@ void driver_E22_print_hexadecimal_ring_buffer(void) {
 	printf("Contenido del buffer del E22:");
 	for (uint16_t offset = 0; offset <256; offset++) {
 		if(0 == offset%8){
-			printf("\noffset %3d:",offset);
+			printf("\noffset %3d: ",offset);
 		}
 		uint8_t rx_buffer;
 		driver_E22_read_from_buffer((uint8_t)offset, &rx_buffer, 1);
@@ -451,13 +473,20 @@ void driver_E22_print_caracteres_ring_buffer(void) {
 	driver_HAL_set_eneable_transaction_view(0);
 
 	/* Mostrar caracteres del buffer interno del E22*/
-	printf("Contenido del buffer del E22:");
+	printf("\nContenido del buffer del E22:");
+	printf("\n\nBuffer TX:");
 	for (uint16_t offset = 0; offset <256; offset++) {
+		if(128 == offset){
+			printf("\n\nBuffer RX:");
+		}
 		if(0 == offset%8){
-			printf("\noffset %3d:",offset);
+			printf("\noffset %3d: ",offset);
 		}
 		uint8_t rx_buffer;
 		driver_E22_read_from_buffer((uint8_t)offset, &rx_buffer, 1);
+		if(rx_buffer < ' '){
+			rx_buffer = ' ';
+		}
 		printf("%c ", rx_buffer);
 		vTaskDelay(10/ portTICK_PERIOD_MS);
 	}
@@ -477,13 +506,16 @@ void driver_E22_SetDIO3asTCXOCtrl(void){
 	MOSI_buffer[3] = (uint8_t)((delay_of_bits >> 8)  & 0xFF);
 	MOSI_buffer[4] = (uint8_t)((delay_of_bits >> 0)  & 0xFF);
 	driver_HAL_transaction(MOSI_buffer, 5, NULL, 0);
+	vTaskDelay(10);
 }
 
 void driver_E22_Calibrate(void){
+	driver_E22_set_standBy();
 	uint8_t MOSI_buffer[2] = {};
 	MOSI_buffer[0] = OPCODE_CalibrateFunction;
 	MOSI_buffer[1] = 0b01111111;
 	driver_HAL_transaction(MOSI_buffer, 2, NULL, 0);
+	vTaskDelay(10);
 }
 
 void driver_E22_CalibrateImage(void){
@@ -492,6 +524,7 @@ void driver_E22_CalibrateImage(void){
 	MOSI_buffer[1] = 0xE1;
 	MOSI_buffer[2] = 0xE9;
 	driver_HAL_transaction(MOSI_buffer, 3, NULL, 0);
+	vTaskDelay(1);
 }
 
 void driver_E22_SetRxGain(void){
@@ -501,43 +534,11 @@ void driver_E22_SetRxGain(void){
 	uint8_t value[1] = {};
 	value[0] = 0x96;
 	driver_E22_write_in_registro(address, value, 1);
+	vTaskDelay(1);
 }
 
-void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
-	/* Poner pin de not_reset en alto */
-	driver_HAL_GPIO_write(GPIO_E22_NRST, LOW);
-    vTaskDelay(100);
-	driver_HAL_GPIO_write(GPIO_E22_NRST, HIGH);
-    vTaskDelay(100);
-
-	/* Set Stand By */
-	/* TX:[0x80 0x00] */
-	driver_E22_set_standBy();
-	vTaskDelay(1);
-
-	/* Setear modo de transmisión como LoRa */
-	/* TX:[0x8A 0x01] */
-	bool transmitir_en_modo_LoRa = 1;
-	driver_E22_SetPacketType(transmitir_en_modo_LoRa);
-    vTaskDelay(1);
-
-	/* Configurar pin DIO3 interno del módulo como control de XTAL*/
-	/* TX: [0x97 0x02 0x00 0x02 0x80 ]*/
-	driver_E22_SetDIO3asTCXOCtrl();
-	vTaskDelay(10);
-
-	/* Set Stand By */
-	/* TX:[0x80 0x00] */
-	driver_E22_set_standBy();
-	vTaskDelay(1);
-
-	/* Calibrar */
-	/* TX:[0x89 0x7F] */
-	driver_E22_Calibrate();
-	vTaskDelay(10);
-
-	/* Setear Capacitor de XTAL */
-	/* TX:[0x80 0x01] */
+void driver_E22_set_Cap(void){
+	/* setear en modo STDBY_XOSC */
 	{
 		uint8_t MOSI_buffer[2] = {};
 		MOSI_buffer[0] = 0x80;
@@ -546,7 +547,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 	}
 	vTaskDelay(10);
 
-	/* TX:[0x0D 0x09 0x11 0x12] */
+	/* Configurar capacitores del XTAL */
 	{
 		uint8_t MOSI_buffer[4] = {};
 		MOSI_buffer[0] = 0x0D;
@@ -557,7 +558,6 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 	}
 	vTaskDelay(1);
 
-	/* TX:[0x0D 0x09 0x12 0x12 ] */
 	{
 		uint8_t MOSI_buffer[4] = {};
 		MOSI_buffer[0] = 0x0D;
@@ -568,113 +568,100 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 	}
 	vTaskDelay(1);
 
-	/* TX:[0x80 0x00] */
-	{
-		uint8_t MOSI_buffer[2] = {};
-		MOSI_buffer[0] = 0x80;
-		MOSI_buffer[1] = 0x00;
-		driver_HAL_transaction(MOSI_buffer, 2, NULL, 0);
-	}
+	driver_E22_set_standBy();
 	vTaskDelay(1);
+}
 
-	/* TX:[0x89 0x7F] */
-	{
-		uint8_t MOSI_buffer[2] = {};
-		MOSI_buffer[0] = 0x89;
-		MOSI_buffer[1] = 0x7F;
-		driver_HAL_transaction(MOSI_buffer, 2, NULL, 0);
-	}
-	vTaskDelay(10);
+void driver_E22_ClearIrqStatus(void){
+	uint8_t MOSI_buffer[3] = {};
+	MOSI_buffer[0] = 0x02;
+	MOSI_buffer[1] = 0x43;
+	MOSI_buffer[2] = 0xFF;
+	driver_HAL_transaction(MOSI_buffer, 3, NULL, 0);
+	vTaskDelay(1);
+}
+
+void driver_E22_SetDioIrqParams(void){
+	uint8_t MOSI_buffer[9] = {};
+	MOSI_buffer[0] = 0x08;
+	MOSI_buffer[1] = 0x02;
+	MOSI_buffer[2] = 0x01;
+	MOSI_buffer[3] = 0x02;
+	MOSI_buffer[4] = 0x01;
+	MOSI_buffer[5] = 0x00;
+	MOSI_buffer[6] = 0x00;
+	MOSI_buffer[7] = 0x00;
+	MOSI_buffer[8] = 0x00;
+	driver_HAL_transaction(MOSI_buffer, 9, NULL, 0);
+	vTaskDelay(1);
+}
+
+
+void driver_E22_GetIrqStatus(void){
+	uint8_t MOSI_buffer[2] = {};
+	MOSI_buffer[0] = 0x12;
+	MOSI_buffer[1] = 0x00;
+	uint8_t response [2] = {};
+	driver_HAL_transaction(MOSI_buffer, 2, response, 2);
+	vTaskDelay(1);
+}
+
+void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
+	driver_E22_reset();
+
+	/* Setear modo de transmisión como LoRa */
+	bool transmitir_en_modo_LoRa = 1;
+	driver_E22_SetPacketType(transmitir_en_modo_LoRa);
+
+	/* Configurar pin DIO3 interno del módulo como control de XTAL*/
+	driver_E22_SetDIO3asTCXOCtrl();
+
+	/* Calibrar */
+	driver_E22_Calibrate();
+
+	/* Setear capacitores de XTAL */
+	driver_E22_set_Cap();
+
+	/* Calibrar */
+	driver_E22_Calibrate();
 
 	/* Calibrar imágen */
-	/* TX:[0x98 0xE1 0xE9] */
 	driver_E22_CalibrateImage();
-	vTaskDelay(1);
 
 	/* Setear frecuencia a utilizar para envío de datos */
-	/* TX:[0x86 0x39 0x30 0x00 0x00] */
 	driver_E22_SetRfFrequency(config_E22.frec_deseada_MHz);
-    vTaskDelay(1);
 
     /* Setear potencia de salida */
-	/* TX:[0x95 0x02 0x03 0x00 0x01] */
 	driver_E22_SetPaConfig(0x02, 0x03, 0);
-	vTaskDelay(1);
 
 	/* Setear potencia de salida */
-	/* TX:[0x8E 0x16 0x05 ] */
     driver_E22_SetTxParams(0x16, 0x05);
-    vTaskDelay(1);
 
-    /* Setear los parametros de modulaci�n */
-	/* TX:[0x8B 0x07 0x04 0x01 0x00 0x00 0x00 0x00 0x00] */
-    driver_E22_SetModulationParams(7, 4, 1, 0);	//(7, 4, 1, 0) por defecto, con (7,8,1,0) y (9,8,1,0) se visualiza mejor en el LDR
-	vTaskDelay(1);
+    /* Setear los parametros de modulación */
+    driver_E22_SetModulationParams(7, 4, 1, 0);	//Con (10,8,1,0) se visualiza mejor en el LDR
 
 	/* Avisar al E22 el largo de bytes a enviar */
-	/* TX:[0x8C 0x00 0x0C 0x00 0x09 0x01 0x00 0x00 0x00 0x00] */
-	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(12, config_E22.Header_is_fixed_length, 9);
-    vTaskDelay(1);
+	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(12, config_E22.Header_is_fixed_length, 4);
 	
-	
-	/* TX:[0x1D 0x07 0x36 0x00] *
-	 * Set TXEN HIGH
-	 * TX:[0x0D 0x07 0x36 0x0D] */
-	driver_E22_fix_invertedIQ_register(1, 1);
+	driver_E22_fix_invertedIQ_register_and_eneable_power_module(1,1);
 
-    /* Palabra de sincronizaci�n */
-	/* TX:[0x0D 0x07 0x40 0x34 0x44] */
     driver_E22_SetSyncWord(0x3444);
-	vTaskDelay(1);
 
-	/* Establecer que Rx y Tx en aire comiencen desde el byte 0 del buffer circular interno del E22 */
-	/* TX:[0x8F 0x00 0x20 ] */
-	driver_E22_SetBufferBaseAddress(0, 32);
-    vTaskDelay(1);
+	/* Establecer offset dentro del buffer para Rx y Tx */
+	driver_E22_SetBufferBaseAddress(0, 128);
 
-	/* Fix modulation quality */
-	/* TX:[0x1D 0x08 0x89 0x00]
-	 * TX:[0x0D 0x08 0x89 0x04] */
 	driver_E22_fix_modulation_quality(4);
-	vTaskDelay(1);
 
 	/* Escribir en el buffer interno del E22 el string a enviar en la posición cero */
-	/* TX:[0x0E 0x00 char1 char2 char3 char4 ...]*/
+	driver_E22_clear_buffer(0, 128, ' ') ;
 	driver_E22_write_in_buffer(0, p_message, 4);
-    vTaskDelay(1);
 
-	/* TX:[0x02 0x43 0xFF] */
-	{
-		uint8_t MOSI_buffer[3] = {};
-		MOSI_buffer[0] = 0x02;
-		MOSI_buffer[1] = 0x43;
-		MOSI_buffer[2] = 0xFF;
-		driver_HAL_transaction(MOSI_buffer, 3, NULL, 0);
-	}
-	vTaskDelay(1);
+	driver_E22_ClearIrqStatus();
 
-	/* TX:[0x08 0x02 0x01 0x02 0x01 0x00 0x00 0x00 0x00] */
-	{
-		uint8_t MOSI_buffer[9] = {};
-		MOSI_buffer[0] = 0x08;
-		MOSI_buffer[1] = 0x02;
-		MOSI_buffer[2] = 0x01;
-		MOSI_buffer[3] = 0x02;
-		MOSI_buffer[4] = 0x01;
-		MOSI_buffer[5] = 0x00;
-		MOSI_buffer[6] = 0x00;
-		MOSI_buffer[7] = 0x00;
-		MOSI_buffer[8] = 0x00;
-		driver_HAL_transaction(MOSI_buffer, 9, NULL, 0);
-	}
-	vTaskDelay(1);
-
-
+	driver_E22_SetDioIrqParams();
 
 	/* Comenzar a enviar mensaje */
-	/* TX:[0x83 0x1D 0x4C 0x00] */
     driver_E22_SetTx_poner_modulo_en_modo_tx(30000);//30000 //Con (10,4,1,0) alcanza con 5000
-	vTaskDelay(10);
 
     /* Tras retorno de pin busy del E22 a low, poner pin de Tx en low*/
     for (int i=0; i<100;i++) {
@@ -690,198 +677,57 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 
     driver_E22_setear_pin_TX_salida_potencia(LOW);
 
-	/* TX:[0x8C 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00] */
-	{
-		uint8_t MOSI_buffer[10] = {};
-		MOSI_buffer[0] = 0x8C;
-		MOSI_buffer[1] = 0x00;
-		MOSI_buffer[2] = 0x00;
-		MOSI_buffer[3] = 0x00;
-		MOSI_buffer[4] = 0x00;
-		MOSI_buffer[5] = 0x00;
-		MOSI_buffer[6] = 0x00;
-		MOSI_buffer[7] = 0x00;
-		MOSI_buffer[8] = 0x00;
-		MOSI_buffer[9] = 0x00;
-		driver_HAL_transaction(MOSI_buffer, 10, NULL, 0);
-	}
-	vTaskDelay(1);
+	driver_E22_GetIrqStatus();
 	
-	/* TX:[0x12 0x00 0x00 0x00]*/
-	{
-		uint8_t MOSI_buffer[2] = {};
-		MOSI_buffer[0] = 0x12;
-		MOSI_buffer[1] = 0x00;
-		uint8_t response [2] = {};
-		driver_HAL_transaction(MOSI_buffer, 2, response, 2);
-	}
-	vTaskDelay(1);
-	
-	/* TX:[0x02 0x43 0xFF] */
-	{
-		uint8_t MOSI_buffer[3] = {};
-		MOSI_buffer[0] = 0x02;
-		MOSI_buffer[1] = 0x43;
-		MOSI_buffer[2] = 0xFF;
-		driver_HAL_transaction(MOSI_buffer, 3, NULL, 0);
-	}
-	vTaskDelay(1);
-	//driver_E22_print_hexadecimal_from_register();
+	driver_E22_ClearIrqStatus();
 }
 
 
 void driver_E22_recive_message(void) {
-	/* Poner pin de not_reset en alto */
-	driver_HAL_GPIO_write(GPIO_E22_NRST, LOW);
-    vTaskDelay(100);
-	driver_HAL_GPIO_write(GPIO_E22_NRST, HIGH);
-    vTaskDelay(100);
-
-	/* Set Stand By */
-	/* TX:[0x80 0x00] */
-	driver_E22_set_standBy();
-	vTaskDelay(1);
+	driver_E22_reset();
 
 	/* Setear modo de transmisión como LoRa */
-	/* TX:[0x8A 0x01] */
 	bool transmitir_en_modo_LoRa = 1;
 	driver_E22_SetPacketType(transmitir_en_modo_LoRa);
-    vTaskDelay(1);
 
-	/* Configurar pin DIO3 interno del módulo como control de XTAL */
-	/* TX: [0x97 0x02 0x00 0x02 0x80 ]*/
+	/* Configurar pin DIO3 interno del módulo como control de XTAL*/
 	driver_E22_SetDIO3asTCXOCtrl();
-	vTaskDelay(10);
-
-	/* Set Stand By */
-	/* TX:[0x80 0x00] */
-	driver_E22_set_standBy();
-	vTaskDelay(1);
 
 	/* Calibrar */
-	/* TX:[0x89 0x7F] */
 	driver_E22_Calibrate();
-	vTaskDelay(10);
 
-	/* Setear Capacitor de XTAL */
-	/* TX:[0x80 0x01] */
-	{
-		uint8_t MOSI_buffer[2] = {};
-		MOSI_buffer[0] = 0x80;
-		MOSI_buffer[1] = 0x01;
-		driver_HAL_transaction(MOSI_buffer, 2, NULL, 0);
-	}
-	vTaskDelay(10);
+	/* Setear capacitores de XTAL */
+	driver_E22_set_Cap();
 
-	/* TX:[0x0D 0x09 0x11 0x12] */
-	{
-		uint8_t MOSI_buffer[4] = {};
-		MOSI_buffer[0] = 0x0D;
-		MOSI_buffer[1] = 0x09;
-		MOSI_buffer[2] = 0x11;
-		MOSI_buffer[3] = 0x12;
-		driver_HAL_transaction(MOSI_buffer, 4, NULL, 0);
-	}
-	vTaskDelay(1);
-
-	/* TX:[0x0D 0x09 0x12 0x12 ] */
-	{
-		uint8_t MOSI_buffer[4] = {};
-		MOSI_buffer[0] = 0x0D;
-		MOSI_buffer[1] = 0x09;
-		MOSI_buffer[2] = 0x12;
-		MOSI_buffer[3] = 0x12;
-		driver_HAL_transaction(MOSI_buffer, 4, NULL, 0);
-	}
-	vTaskDelay(1);
-
-	/* TX:[0x80 0x00] */
-	{
-		uint8_t MOSI_buffer[2] = {};
-		MOSI_buffer[0] = 0x80;
-		MOSI_buffer[1] = 0x00;
-		driver_HAL_transaction(MOSI_buffer, 2, NULL, 0);
-	}
-	vTaskDelay(1);
-
-	/* TX:[0x89 0x7F] */
-	{
-		uint8_t MOSI_buffer[2] = {};
-		MOSI_buffer[0] = 0x89;
-		MOSI_buffer[1] = 0x7F;
-		driver_HAL_transaction(MOSI_buffer, 2, NULL, 0);
-	}
-	vTaskDelay(10);
+	/* Calibrar */
+	driver_E22_Calibrate();
 
 	/* Calibrar imágen */
-	/* TX:[0x98 0xE1 0xE9] */
 	driver_E22_CalibrateImage();
-	vTaskDelay(1);
 
 	/* Setear frecuencia a utilizar para envío de datos */
-	/* TX:[0x86 0x39 0x30 0x00 0x00] */
 	driver_E22_SetRfFrequency(config_E22.frec_deseada_MHz);
-    vTaskDelay(1);
 
 	/* Setear ganancia en Rx con setRxGain */
-	/* TX:[0x0D 0x08 0xAC 0x96 ] */
 	driver_E22_SetRxGain();
-	vTaskDelay(1);
 
-    /* Setear los parametros de modulaci�n */
-    /* TX:[0x8B 0x07 0x04 0x01 0x00 0x00 0x00 0x00 0x00] */
+    /* Setear los parametros de modulación */
     driver_E22_SetModulationParams(7, 4, 1, 0);
-    vTaskDelay(1);
 
-	/* Avisar al E22 el largo de bytes a enviar */
-	//driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(config_E22.PreambleLength, config_E22.Header_is_fixed_length, 120);
-	/* TX:[0x8C 0x00 0x0C 0x00 0x09 0x01 0x00 0x00 0x00 0x00] */
-	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(12, config_E22.Header_is_fixed_length, 9);
-    vTaskDelay(1);
-	
-	
-	/* TX:[0x1D 0x07 0x36 0x00] *
-	 * Set RXEN HIGH
-	 * TX:[0x0D 0x07 0x36 0x0D] */
-	driver_E22_fix_invertedIQ_register(1, 0);
-    vTaskDelay(1);
+	/* Avisar al E22 el largo máximo de bytes a recibir */
+	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(12, config_E22.Header_is_fixed_length, MAX_SIZE_SPI_BUFFERS-2);
 
+	driver_E22_fix_invertedIQ_register_and_eneable_power_module(1,0);
 
-    /* Palabra de sincronizaci�n */
-	/* TX:[0x0D 0x07 0x40 0x34 0x44] */
     driver_E22_SetSyncWord(0x3444);
-    vTaskDelay(1);
 
-	/* Establecer que Rx y Tx en aire comiencen desde el byte 0 del buffer circular interno del E22 */
-	/* TX:[0x8F 0x00 0x20 ] */
-	driver_E22_SetBufferBaseAddress(0, 32);
-    vTaskDelay(1);
+	/* Establecer offset dentro del buffer para Rx y Tx */
+	driver_E22_SetBufferBaseAddress(0, 128);
+	driver_E22_clear_buffer(128, 128, ' ') ;
 
-	/* TX:[0x02 0x43 0xFF] */
-	{
-		uint8_t MOSI_buffer[3] = {};
-		MOSI_buffer[0] = 0x02;
-		MOSI_buffer[1] = 0x43;
-		MOSI_buffer[2] = 0xFF;
-		driver_HAL_transaction(MOSI_buffer, 3, NULL, 0);
-	}
-	vTaskDelay(1);
+	driver_E22_ClearIrqStatus();
 
-	/* TX:[0x08 0x02 0x62 0x02 0x62 0x00 0x00 0x00 0x00] */
-	{
-		uint8_t MOSI_buffer[9] = {};
-		MOSI_buffer[0] = 0x08;
-		MOSI_buffer[1] = 0x02;
-		MOSI_buffer[2] = 0x62;
-		MOSI_buffer[3] = 0x02;
-		MOSI_buffer[4] = 0x62;
-		MOSI_buffer[5] = 0x00;
-		MOSI_buffer[6] = 0x00;
-		MOSI_buffer[7] = 0x00;
-		MOSI_buffer[8] = 0x00;
-		driver_HAL_transaction(MOSI_buffer, 9, NULL, 0);
-	}
-	vTaskDelay(1);
+	driver_E22_SetDioIrqParams();
 
 	/* Timeout 0xFFFFFF hace que esté en modo recepción continua hasta que se cambia el
 	 * modo de recepción (con otro timeout) o hasta que se fuerza por opcode a ir a idle o tx*/

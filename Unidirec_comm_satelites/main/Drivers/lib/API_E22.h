@@ -78,6 +78,7 @@ void driver_E22_reset(void);
  *	@param	[uint8_t] offset: Posición de inicio de escritura en el buffer circular de 256 bytes del E22.
  *	@param	[uint8_t *] tx_buffer: Posición del primer byte a escribir.
  *	@param	[uint8_t] tx_length: Cantidad de bytes a escribir en el buffer interno del E22.
+ *  @note   MOSI: [0x0E 0x00 char1 char2 char3 char4 ...]
  */
 void driver_E22_write_in_buffer(uint8_t offset, uint8_t* tx_buffer, uint8_t tx_length);
 
@@ -90,7 +91,7 @@ void driver_E22_write_in_buffer(uint8_t offset, uint8_t* tx_buffer, uint8_t tx_l
  */
 void driver_E22_read_from_buffer(uint8_t offset, uint8_t* rx_buffer, uint8_t rx_length);
 
-
+void driver_E22_clear_buffer(uint8_t offset, uint8_t length, uint8_t characters);
 
 /**
  *	@brief	Escribe en un registro interno del E22
@@ -110,6 +111,7 @@ void driver_E22_read_from_registro(uint8_t *address, uint8_t* rx_buffer, uint8_t
 
 /**
  *	@brief	Póne el módulo en modo Stand By
+ *  @note   MOSI: [0x80 0x00]
  */
 void driver_E22_set_standBy(void);
 
@@ -126,12 +128,15 @@ void driver_E22_GetRxBufferStatus(uint8_t* PayloadLengthRx, uint8_t* RxBufferPoi
  *	@brief	Setea las posiciones de inicio de Rx y Tx del E22 en su buffer circular interno
  *	@param [uint8_t] tx_base_adress: offset del Tx. Posición en la que se comienza a emitir el mensaje.
  *	@param [uint8_t] rx_base_adress: offset del Rx. Posición en la que se comienza a guardar el mensaje recibido.
+ *  @note   MOSI: [0x8F <offset de TX> <offset de RX>]
  */
 void driver_E22_SetBufferBaseAddress(uint8_t tx_base_adress, uint8_t rx_base_adress);
 
 /**
- *	@brief	Configura el SX1262 del E22 en modo Tx
- *	@note	No contempla poner pin TX en alto necesario para que el módulo E22 emita
+ *	@brief	Configura el SX1262 del E22 en modo Tx.
+ *  @param [uint32_t] timeout: timeout en milisegundos.
+ *	@note	Esta función no pone pin TXEN en alto.
+ *  @note   MOSI: [0x83 0x1D 0x4C 0x00] (Depende del timeout).
  */
 void driver_E22_SetTx_poner_modulo_en_modo_tx(uint32_t timeout);
 
@@ -147,6 +152,7 @@ void driver_E22_SetRx_poner_modulo_en_modo_rx(uint32_t timeout);
  *	@param [uint8_t] hpMax: valor por defecto 0x03.
  *	@param [uint8_t] deviceSe: Debe ser 0.
  *  @note  Para el SX1262 que tiene el E22-900M30S los parámetros deben ser (0x02,0x03,0)
+ *  @note  Para (0x02,0x03,0) se envía MOSI: [0x95 0x02 0x03 0x00 0x01]
  */
 void driver_E22_SetPaConfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSe);
 
@@ -154,6 +160,7 @@ void driver_E22_SetPaConfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSe
  *	@brief Establece la potencia de salida y tiempo de rampa del dispositivo emisor
  *	@param [uint8_t] power: valor por defecto 0x16.
  *	@param [uint8_t] rampTime: valor por defecto 0x05.
+ *  @note  Para los valores por defecto MOSI: [0x8E 0x16 0x05]
  */
 void driver_E22_SetTxParams(uint8_t power, uint8_t rampTime);
 
@@ -164,35 +171,49 @@ void driver_E22_SetTxParams(uint8_t power, uint8_t rampTime);
  *	@param [uint8_t] CodingRate: Valor por defecto 1.
  *	@param [uint8_t] LowDataRateOptimization: Valor por defecto 0.
  *                   Para paquetedes de larga duración se recomienda que esté en 1.
+ *  @note  Para los valores por defecto (7,4,1,0) MOSI: [0x8B 0x07 0x04 0x01 0x00 0x00 0x00 0x00 0x00]
  */
 void driver_E22_SetModulationParams(uint8_t SF, uint8_t BW, uint8_t CR, uint8_t LDRO);
 
 /**
  *	@brief  Corrige el registro 0x0889 si tiene un valor erroneo tras reiniciar el dispositivo.
+ *  @note   MOSI: [0x1D 0x08 0x89 0x00] [0x0D 0x08 0x89 <Parametro de corrección, por defecto 0x04>]
  */
 void driver_E22_fix_modulation_quality(uint8_t BW);
 
+/**
+ * @brief   Setea la palabra de sincronización.
+ * @note    MOSI: [0x0D 0x07 0x40 0x34 0x44]
+ */
 void driver_E22_SetSyncWord(uint16_t sync);
 
 /**
  *	@brief	Configura el dataframe de la comunicación LoRa
  *	@note	El parámetro más importante es "bytes_a_enviar". En modo Rx define la cantidad máxima de bytes a recibir por mensaje.
+ *  @note   Para un preámbulo de 12, 9 bytes a enviar y encabezado fijo:
+ *          MOSI: [0x8C 0x00 0x0C 0x00 0x09 0x01 0x00 0x00 0x00 0x00]
  */
 void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength, bool Header_is_fixed_length, uint8_t bytes_a_enviar);
 
 /**
  *	@brief  Corrige el registro 0x0736 si tiene un valor erroneo tras reiniciar el dispositivo.
+ *  @param [bool] is_standar_IQ: 1 si se usa configuración IQ estandar, 0 si se usa invertida.
+ *  @param [bool] is_TX: 1 si se va a emitir, 0 si se va a recibir.
+ *  @note   MOSI:[0x1D 0x07 0x36 0x00], configura pines TXEN y RXEN, MOSI:[0x0D 0x07 0x36 0x0D]
  */
-void driver_E22_fix_invertedIQ_register(bool is_standard_IQ, bool is_TX);
+void driver_E22_fix_invertedIQ_register_and_eneable_power_module(bool is_standard_IQ, bool is_TX);
 
 /**
  *	@brief	Setea el modo de transmisión del E22. Puede ser LoRa o FSK.
  *	@note	Se recomienda que el parametro sea 1 (emitir en modo LoRa)
+ *  @note   MOSI: [0x8A 0x01]
  */
 void driver_E22_SetPacketType(bool transmitir_en_modo_LoRa);
 
 /**
  *	@brief	Setea la frecuencia de la portadora
+ *  @note   Para una frecuencia de 915MHz se envía:
+ *          MOSI: [0x86 0x39 0x30 0x00 0x00]
  */
 void driver_E22_SetRfFrequency(uint32_t frec_deseada_MHz);
 
@@ -210,10 +231,34 @@ void driver_E22_setear_pin_RX_entrada_aire(bool estado);
 
 
 /**
- * @brief	Muestra por terminal serie la configuración del módulo E22
+ * @brief	Muestra por terminal serie la configuración del módulo E22.
  */
 void driver_E22_print_configuracion(void);
 
+/**
+ * @brief   Configura los calores de los capacitores A y B del XTAL.
+ * @note    MOSI: [0x80 0x01] [0x0D 0x09 0x11 0x12] [0x0D 0x09 0x12 0x12 ] [0x80 0x00]
+ * @note    Al usarse va a modo standBy.
+ */
+void driver_E22_set_Cap(void);
+
+/**
+ * @brief   Limpia los Flags de las interrupciones.
+ * @note    MOSI: [0x02 0x43 0xFF]
+ */
+void driver_E22_ClearIrqStatus(void);
+
+/**
+ * @brief  Setea las interrupciones.
+ * @note   MOSI: [0x08 0x02 0x01 0x02 0x01 0x00 0x00 0x00 0x00]
+ */
+void driver_E22_SetDioIrqParams(void);
+
+/**
+ * @brief Hace un Get del estado del E22
+ * @note MOSI: [0x12 0x00 0x00 0x00]
+ */
+void driver_E22_GetIrqStatus(void);
 
 /**
  * @brief	Envía el string por aire.
@@ -245,17 +290,28 @@ void driver_E22_print_caracteres_ring_buffer(void);
 
 /**
  * @brief	Configura el pin interno DIO3 del módulo como control del TCXO
+ * @note    MOSI: [0x97 0x02 0x00 0x02 0x80]
  */
 void driver_E22_SetDIO3asTCXOCtrl(void);
 
 /**
  * @brief	Calibración del módulo
- * @note    Se debe llamar estando en modo standby
+ * @note    Al usarse la función va al modo standby
+ * @note    MOSI: [0x89 0x7F]
  */
 void driver_E22_Calibrate(void);
 
+/**
+ * @brief   Calibra la salida respecto a la frecuencia a utilizar
+ * @note    La función calibra para utilizar la frecuencia de 915 MHz
+ * @note    MOSI: [0x98 0xE1 0xE9]
+ */
 void driver_E22_CalibrateImage(void);
 
+/**
+ * @brief   Configura la ganancia en modo RX
+ * @note    MOSI: [0x0D 0x08 0xAC 0x96]
+ */
 void driver_E22_SetRxGain(void);
 
 /* ----- Métodos setter y getter para la configuración LoRa ----- */
