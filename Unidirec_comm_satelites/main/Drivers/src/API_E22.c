@@ -324,10 +324,9 @@ void driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(uint16_t PreambleLength,
 	MOSI_buffer[0] = OPCODE_SetPacketParams;					/* OPCODE */
 	MOSI_buffer[1] = (uint8_t)((PreambleLength >> 8) & 0xFF);	/* preambulo 1 - PreambleLength		*/
 	MOSI_buffer[2] = (uint8_t)((PreambleLength >> 0) & 0xFF);	/* preambulo 2 - PreambleLength		*/
-	//MOSI_buffer[3] = Header_is_fixed_length;					/* preambulo 3 - HeaderType			*/
-	MOSI_buffer[3] = 0;//0	/*0 = Variable length packet (explicit header)*/		/* preambulo 3 - HeaderType			*/
+	MOSI_buffer[3] = 0;											/* preambulo 3 - HeaderType. 0 = Variable length packet (explicit header) */
 	MOSI_buffer[4] = bytes_a_enviar;							/* preambulo 4 - PayloadLength		*/
-	MOSI_buffer[5] = 1;	//1										/* preambulo 5 - CRC - Configurado como OFF */
+	MOSI_buffer[5] = 1;											/* preambulo 5 - CRC - Configurado como OFF */
 	MOSI_buffer[6] = 0;											/* preambulo 6 - InvertIQ - Configurado como Standard IQ setup */
 	MOSI_buffer[7] = 0x00;
 	MOSI_buffer[8] = 0x00;
@@ -601,9 +600,18 @@ void driver_E22_GetIrqStatus(void){
 	uint8_t MOSI_buffer[2] = {};
 	MOSI_buffer[0] = 0x12;
 	MOSI_buffer[1] = 0x00;
-	uint8_t response [2] = {};
-	driver_HAL_transaction(MOSI_buffer, 2, response, 2);
+	uint8_t status [2] = {};
+	driver_HAL_transaction(MOSI_buffer, 2, status, 2);
 	vTaskDelay(1);
+	if(status[1]&0x01){
+		printf("\n>> Mensaje enviado (E22).\n");
+	}
+	/*if(status[1]&0x02){
+		printf("\n>> Mensaje Recibido!\n");
+		printf(">> Ve a 'configuración del dispositivo > LoRa config > opción 7' para visualizar el mensaje\n");
+		driver_E22_ClearIrqStatus();
+		vTaskDelay(1);
+	}*/
 }
 
 void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
@@ -641,7 +649,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
     driver_E22_SetModulationParams(7, 4, 1, 0);	//Con (10,8,1,0) se visualiza mejor en el LDR
 
 	/* Avisar al E22 el largo de bytes a enviar */
-	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(12, config_E22.Header_is_fixed_length, 4);
+	driver_E22_SetPacketParams_con_modulo_en_modo_LoRa(12, config_E22.Header_is_fixed_length, length);
 	
 	driver_E22_fix_invertedIQ_register_and_eneable_power_module(1,1);
 
@@ -654,7 +662,7 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 
 	/* Escribir en el buffer interno del E22 el string a enviar en la posición cero */
 	driver_E22_clear_buffer(0, 128, ' ') ;
-	driver_E22_write_in_buffer(0, p_message, 4);
+	driver_E22_write_in_buffer(0, p_message, length);
 
 	driver_E22_ClearIrqStatus();
 
@@ -662,18 +670,6 @@ void driver_E22_send_message(uint8_t * p_message, uint8_t length) {
 
 	/* Comenzar a enviar mensaje */
     driver_E22_SetTx_poner_modulo_en_modo_tx(30000);//30000 //Con (10,4,1,0) alcanza con 5000
-
-    /* Tras retorno de pin busy del E22 a low, poner pin de Tx en low*/
-    for (int i=0; i<100;i++) {
-        vTaskDelay(10/ portTICK_PERIOD_MS);
-        if(99 == i) {
-            printf(">> ERROR: El mensaje no se envi�!\n");
-        }
-        if (0 == driver_HAL_GPIO_read(GPIO_E22_BUSY)) {
-            printf("\n>> Mensaje enviado (E22).\n");
-        	break;
-        }
-    }
 
     driver_E22_setear_pin_TX_salida_potencia(LOW);
 

@@ -32,7 +32,7 @@ pos_menu_t pos_menu_actual;
 
 void analizar_input_USB(void);
 void read_command(void);
-void send_message(uint8_t length);
+void send_message(void);
 void text_lower(uint8_t *text);
 void display_tree(void);
 pos_menu_t read_cd_ID(void);
@@ -59,13 +59,12 @@ static message_mode_config_t _message_mode_config;
  *        Al finalizar limpia el String USB_input[].
  */
 void analizar_input_USB(void){
-	uint8_t length = (uint8_t)i_USB_input - 1;
 	i_USB_input=0;
 	if(USB_input[0]=='$'){
 		read_command();
 	}
 	if(USB_input[0]=='>'){
-		send_message(length);
+		send_message();
 	}
 	if(USB_input[0]>='0' && USB_input[0]<='9'){
 	    printf("Ingreso: %s\n", USB_input);
@@ -114,8 +113,11 @@ void read_command(void){
         reconectar_WiFi_manualmente();
 	}else if(strstr((char *)(USB_input+1),"rx")!=0||strstr((char *)(USB_input+1),"rec")!=0||strstr((char *)(USB_input+1),"escuchar")!=0){
 		printf(">> Comando $rx ingresado.\n");
-		printf(">> Se pasa el módulo E22 a modo Rx continuo. Recibe constantemente por aire y lo guarda en su buffer interno.\n");
-		printf(">> Para detener el modo Rx continuo se debe forzar el pasaje a IDLE o Tx o reiniciar el módulo E22.\n");
+		//printf(">> Se pasa el módulo E22 a modo Rx continuo. Recibe constantemente por aire y lo guarda en su buffer interno.\n");
+		//printf(">> Para detener el modo Rx continuo se debe forzar el pasaje a IDLE o Tx o reiniciar el módulo E22.\n");
+		printf(">> Se pasa el módulo E22 a modo Rx. Se borro el buffer de mensajes recibidos.\n");
+		printf(">> Se posee una ventana de 30 segundos a recibir. Pasado este tiempo se volverá al modo IDLE.\n");
+		printf(">> Ve a 'configuración del dispositivo > LoRa config > opción 7' para visualizar el mensaje\n");
 		driver_E22_recive_message();
 	}
 	else {
@@ -141,9 +143,9 @@ pos_menu_t read_cd_ID(void){
 /**
  * @brief	Envía un mensaje por LoRa
  */
-void send_message(uint8_t length){
+void send_message(){
 	printf("Enviando \"%s\" por LoRa...\n",USB_input+1);
-	driver_E22_send_message(USB_input+1, length);
+	driver_E22_send_message(USB_input+1, strlen((char*)USB_input+1));
 }
 
 

@@ -91,6 +91,12 @@ void driver_E22_write_in_buffer(uint8_t offset, uint8_t* tx_buffer, uint8_t tx_l
  */
 void driver_E22_read_from_buffer(uint8_t offset, uint8_t* rx_buffer, uint8_t rx_length);
 
+/**
+ * @brief   Llena parte del ring buffer con el caracter indicado.
+ * @param   [uint8_t] offset: Posición de inicio del ring buffer a sobreescribir.
+ * @param   [uint8_t] length: Largo en bytes a sobreescribir del buffer.
+ * @param   [uint8_t] characters: Caracter a utilizar para sobreescribir el buffer.
+ */
 void driver_E22_clear_buffer(uint8_t offset, uint8_t length, uint8_t characters);
 
 /**
@@ -142,7 +148,12 @@ void driver_E22_SetTx_poner_modulo_en_modo_tx(uint32_t timeout);
 
 /**
  *	@brief	Configura el SX1262 del E22 en modo Rx
- *	@note	No contempla poner pin RX en alto necesario para que el módulo E22 reciba
+ *  @param  [uint32_t] timeout: Dependiendo el valor del timeout es el tiempo a esperar el mensaje.
+ *          Valor recomendado por defecto 0x1D4C00.
+ *          El valor a ingresar debe ser el timeout deseado multiplecado por 2^6.
+ *  @note   Si timeout es 0 el modo RX pasa a ser de recepción única sin timeout.
+ *  @note   Si el timeout es 0xFFFFFF se pone en modo RX continuo, pudiendo guardar múltiples mensajes.
+ *	@note	No contempla poner pin RX en alto necesario para que el módulo E22 reciba.
  */
 void driver_E22_SetRx_poner_modulo_en_modo_rx(uint32_t timeout);
 
@@ -177,18 +188,26 @@ void driver_E22_SetModulationParams(uint8_t SF, uint8_t BW, uint8_t CR, uint8_t 
 
 /**
  *	@brief  Corrige el registro 0x0889 si tiene un valor erroneo tras reiniciar el dispositivo.
+ *  @param  [uint8_t] BW: Ancho de banda seleccionado según tabla de SX1262.
  *  @note   MOSI: [0x1D 0x08 0x89 0x00] [0x0D 0x08 0x89 <Parametro de corrección, por defecto 0x04>]
  */
 void driver_E22_fix_modulation_quality(uint8_t BW);
 
 /**
  * @brief   Setea la palabra de sincronización.
+ * @param   [uint16_t] sync: Palabra de sincronización utilizada en procolo LoRa.
+ *          Tanto el módulo emisor como receptor deben tener igual palabra de sincronización.
+ *          Valor por defecto 3444.
  * @note    MOSI: [0x0D 0x07 0x40 0x34 0x44]
  */
 void driver_E22_SetSyncWord(uint16_t sync);
 
 /**
  *	@brief	Configura el dataframe de la comunicación LoRa
+ *  @param  [uint16_t] PreambleLength: Largo del preámbulo LoRa, debe coincidir en módulo emisor y receptor.
+ *          Valor por defecto 12.
+ *  @param  [bool] Header_is_fixed_length: Debe coincidir en módulo emisor y receptor. Por defecto 0 para explicit header.
+ *  @param  [uint8_t] bytes_a_enviar: Número de bytes a enviar desde el buffer, o cantidad de bytes máxima a recibir.
  *	@note	El parámetro más importante es "bytes_a_enviar". En modo Rx define la cantidad máxima de bytes a recibir por mensaje.
  *  @note   Para un preámbulo de 12, 9 bytes a enviar y encabezado fijo:
  *          MOSI: [0x8C 0x00 0x0C 0x00 0x09 0x01 0x00 0x00 0x00 0x00]
@@ -205,6 +224,8 @@ void driver_E22_fix_invertedIQ_register_and_eneable_power_module(bool is_standar
 
 /**
  *	@brief	Setea el modo de transmisión del E22. Puede ser LoRa o FSK.
+ *  @param  [bool] transmitir_en_modo_LoRa: 1 para transmitir en modo LoRa.
+ *          Esta versión de driver solo está preparada para transmitir en modo LoRa.
  *	@note	Se recomienda que el parametro sea 1 (emitir en modo LoRa)
  *  @note   MOSI: [0x8A 0x01]
  */

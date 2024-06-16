@@ -44,6 +44,11 @@ bool transaction_view_eneable = 1;
 
 /********************** internal functions definition ************************/
 
+/**
+ * @brief   Setea el valor de la variable interna transaction_view_eneable.
+ * @param   [bool] eneable: 1 para mostrar la transacción SPI por UART, 0 para ocultarla.
+ * @note    transaction_view_eneable define si se visualizan o no las transacciones SPI.
+ */
 void driver_HAL_set_eneable_transaction_view(bool eneable){
     if (0!=eneable){
         transaction_view_eneable = 1;
@@ -52,31 +57,37 @@ void driver_HAL_set_eneable_transaction_view(bool eneable){
     }
 }
 
+/**
+ * @brief   Devuelve el valor de la variable transaction_view_eneable.
+ * @note    transaction_view_eneable define si se visualizan o no las transacciones SPI.
+ */
 bool driver_HAL_get_eneable_transaction_view(void){
     return transaction_view_eneable;
 }
 
+/**
+ * @brief   La función envía por UART los valores de MOSI y MISO en la comunicación.
+ * @param   [uint8_t] bytes_length: Largo de bytes a mostrar.
+ * @param   [uint8_t *] buffer: Posición de inicio del buffer a mostrar.
+ * @param   [uint8_t *] is_tx: 1 si es MOSI, 0 si es MISO.
+ * @note    La función solo muestra los bytes de la transacción si transaction_view_eneable es true.
+ *          Para esto se debe usar la función driver_HAL_set_eneable_transaction_view(bool).
+ */
 void driver_HAL_SPI_transaction_view(uint8_t bytes_length, uint8_t * buffer, bool is_tx){
-    // Create a buffer to store the formatted string
-    char formatted_string[bytes_length * 5 + 1]; // Allocate enough space for hex, spaces and null terminator
+    char formatted_string[bytes_length * 5 + 1];
 
     int index = 0;
-    for (int i = 0; i < bytes_length; i++)
-    {
-        // Format each byte as a two-digit hex string and store it in the buffer
+    for (int i = 0; i < bytes_length; i++){
         sprintf(formatted_string + index, "0x%02X ", buffer[i]);
-        index += 5; // Increment index by 5 for the formatted byte + spaces
+        index += 5;
     }
-
-    // Print the formatted string with a trailing n
     if(0!=bytes_length&&1==transaction_view_eneable){
         if(is_tx){
-            printf("\n>> SPI: TX:  %s\n", formatted_string);
+            printf("\n>> SPI: MOSI:  %s\n", formatted_string);
         } else {
-            printf("\n>> SPI: RX:  %s\n", formatted_string);
+            printf("\n>> SPI: MISO:  %s\n", formatted_string);
         }
     }
-    
 }
 
 /**

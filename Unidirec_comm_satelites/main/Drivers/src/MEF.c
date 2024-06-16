@@ -50,6 +50,7 @@ delay_t delay_entre_envio_de_mensajes;
  *	@brief	Actualizar MEF referida a la emisión de mensajes programados
  */
 void update_MEF_message(void) {
+	/* update MEF */
 	if (USB_mode == MEF_mode) {
 		/* Tomar datos a enviar desde USB */
 		get_estruct_message_mode_config(&message_mode_config);
