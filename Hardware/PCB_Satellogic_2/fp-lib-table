@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "PCB_Satellogic")(type "KiCad")(uri "C:/Espressif/frameworks/esp-idf-v5.0/workspace/LoRa-ESP32/Hardware/PCB_Satellogic/Foot_print_devices_lib")(options "")(descr ""))
+)

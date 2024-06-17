@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "Device")(type "Legacy")(uri "${KIPRJMOD}/Device.lib")(options "")(descr ""))
+  (lib (name "Libreria_Proyecto_Satellogic")(type "KiCad")(uri "${KIPRJMOD}/Libreria_Proyecto_Satellogic.kicad_sym")(options "")(descr ""))
+)

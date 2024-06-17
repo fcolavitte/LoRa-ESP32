@@ -600,15 +600,20 @@ void driver_E22_GetIrqStatus(void){
 	uint8_t MOSI_buffer[2] = {};
 	MOSI_buffer[0] = 0x12;
 	MOSI_buffer[1] = 0x00;
-	uint8_t status [2] = {};
-	driver_HAL_transaction(MOSI_buffer, 2, status, 2);
+	uint8_t IrqStatus [2] = {};
+	driver_HAL_transaction(MOSI_buffer, 2, IrqStatus, 2);
 	vTaskDelay(1);
-	if(status[1]&0x01){
+	if(IrqStatus[1]&0x01){
 		printf("\n>> Mensaje enviado (E22).\n");
 	}
-	/*if(status[1]&0x02){
+	/*if(IrqStatus[1]&0x02){
 		printf("\n>> Mensaje Recibido!\n");
 		printf(">> Ve a 'configuración del dispositivo > LoRa config > opción 7' para visualizar el mensaje\n");
+		driver_E22_ClearIrqStatus();
+		vTaskDelay(1);
+	}*/
+	/*if(IrqStatus[0]&0x02){
+		printf("\n>> Timeout.");
 		driver_E22_ClearIrqStatus();
 		vTaskDelay(1);
 	}*/
